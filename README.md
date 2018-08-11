@@ -12,7 +12,7 @@ Last release is 0.1 beta.
 Source code and binary files are available for Linux 64-bit systems.
 Windows versions are planned for the future.
 
-[Screenshot](screen.jpg)
+![Screenshot](screen.jpg)
 
 ### Currently avaliable plugins
 
