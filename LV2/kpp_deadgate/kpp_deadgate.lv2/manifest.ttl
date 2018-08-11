@@ -1,0 +1,21 @@
+
+########## https://faustlv2.bitbucket.io/kpp_deadgate ##########
+
+@prefix doap: <http://usefulinc.com/ns/doap#> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix lv2:  <http://lv2plug.in/ns/lv2core#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+<https://faustlv2.bitbucket.io/kpp_deadgate>
+    a lv2:Plugin ;
+    lv2:binary <kpp_deadgate.so> ;
+    rdfs:seeAlso <kpp_deadgate.ttl> .
+
+<https://faustlv2.bitbucket.io/kpp_deadgate> a lv2:FilterPlugin .
+
+<https://faustlv2.bitbucket.io/kpp_deadgate>
+     doap:license <http://opensource.org/licenses/isc> ;
+     doap:maintainer [
+         foaf:name "Oleg Kapitonov" ;
+         foaf:mbox <mailto:kapitonov1987@gmail.com> ;
+     ] .

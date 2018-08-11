@@ -1,0 +1,30 @@
+
+########## https://faustlv2.bitbucket.io/kpp_bluedream ##########
+
+@prefix doap: <http://usefulinc.com/ns/doap#> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix lv2:  <http://lv2plug.in/ns/lv2core#> .
+@prefix ui:   <http://lv2plug.in/ns/extensions/ui#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+<https://faustlv2.bitbucket.io/kpp_bluedream>
+    a lv2:Plugin ;
+    lv2:binary <kpp_bluedream.so> ;
+    rdfs:seeAlso <kpp_bluedream.ttl> .
+
+<https://faustlv2.bitbucket.io/kpp_bluedreamui>
+    a ui:X11UI ;
+    ui:binary <kpp_bluedreamui.so> ;
+        lv2:requiredFeature ui:idle ; 
+        lv2:requiredFeature ui:fixedSize;
+        lv2:extensionData ui:idle ; 
+        ui:requiredFeature ui:makeResident .
+
+<https://faustlv2.bitbucket.io/kpp_bluedream> a lv2:FilterPlugin .
+
+<https://faustlv2.bitbucket.io/kpp_bluedream>
+     doap:license <http://opensource.org/licenses/isc> ;
+     doap:maintainer [
+         foaf:name "Oleg Kapitonov" ;
+         foaf:mbox <mailto:kapitonov1987@gmail.com> ;
+     ] .
