@@ -10,7 +10,7 @@ Last release is 0.1 beta.
 > guitarix, jack-rack.
 
 Source code and binary files are available for Linux 64-bit systems.
-A Windows versions are planned for the future.
+Windows versions are planned for the future.
 
 ### Currently avaliable plugins
 
