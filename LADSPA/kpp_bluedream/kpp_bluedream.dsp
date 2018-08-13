@@ -34,7 +34,7 @@
  *  post-filter - lowpass, 1 order, 720 Hz. Bypassed when _voice_ is in right position.
  */
 
-declare name "kpp_distruction";
+declare name "kpp_bluedream";
 declare author "Oleg Kapitonov";
 declare license "GPLv3";
 declare version "0.1b";
@@ -97,18 +97,25 @@ process = output with {
     /*--------Processing chain-----------------*/
    
     // Used 2 tubes - for positive and negative half-waves (push-pull).
-    // LADSPA version of this plugin is mono.
+    // Stereo input and output, but during processing the signal is
+    // converted to mono.
     
-    stage_stomp = _ <: (fi.highpass(1,720)*(1-voice)),*(voice) : + : fi.lowpass(1,9000) : _<: 
+    pre_filter = _ <: fi.highpass(1, 720) * min((1 - voice + 0.75 * drive / 100), 1),
+    *(max((voice - 0.75 * drive / 100), 0)) : + ;
+    
+    post_filter = _ <: fi.lowpass(1, 720) * min((1 - voice + 0.75 * drive / 100), 1),
+    *(max((voice - 0.75 * drive / 100), 0)) : + ;
+    
+    stage_stomp = pre_filter : fi.lowpass(1,9000) : _<: 
     _,*(-1.0) : tube(Rg,Cg,Kreg,Upor,bias,0), tube(Rg,Cg,Kreg,Upor,bias,0) : - : 
     fi.peak_eq(tonestack_low,tonestack_low_freq,tonestack_low_band) : 
     fi.peak_eq(tonestack_middle,tonestack_middle_freq,tonestack_middle_band) : 
-    fi.peak_eq(tonestack_high,tonestack_high_freq,tonestack_high_band) <: (fi.lowpass(1,720)*(1-
-    voice)),*(voice) : +;
+    fi.peak_eq(tonestack_high,tonestack_high_freq,tonestack_high_band) :
+    post_filter ;
     
-    stomp = fi.highpass(1,20) : *(ba.db2linear(drive*0.4))  : stage_stomp : 
-    *(ba.db2linear(volume*60.0)/100.0) ;
-      
+    stomp = fi.highpass(1,20) : *(ba.db2linear(drive * 0.4 * (1 - voice * 0.5)))  : stage_stomp : 
+    *(ba.db2linear(volume * 60.0 * (1 - voice * 0.25) ) / 100.0) ;
+    
     output = _ : stomp : _ ;
     
 };

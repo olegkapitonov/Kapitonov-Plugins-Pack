@@ -47,7 +47,7 @@ import("stdfaust.lib");
 process = output with {
 
     // Bypass button, 0 - pedal on, 1 -pedal off (bypass on)
-    bypass = vslider("99_bypass", 0, 0, 1, 0.5);
+    bypass = checkbox("99_bypass");
           
     drive = vslider("drive",63,0,100,0.01);
     volume = vslider("volume",0.5,0,1,0.001);
@@ -74,13 +74,12 @@ process = output with {
     filt_freq = 50*(1-voice) + 3900*voice;
     
     stage_stomp = fi.highpass(1,filt_freq) : fi.lowpass(1,5200) : _<: _,*(-1.0) : (max(0.0) : min(Upor)), (max(0.0) : min(Upor)) : - : fi.peak_eq(tonestack_low+15.0,tonestack_low_freq,tonestack_low_band) : fi.peak_eq(tonestack_middle-15.0,tonestack_middle_freq,tonestack_middle_band) : 
-    fi.peak_eq(tonestack_high,tonestack_high_freq,tonestack_high_band) : fi.lowpass(1,720);
+    fi.peak_eq(tonestack_high,tonestack_high_freq,tonestack_high_band) : fi.lowpass(1, 720) :
+    fi.highpass(2, 320) ;
     
-    stomp = *(drive) : *(5) : stage_stomp : *(volume) : /(1.5) : *(1.0 - bypass) ;
+    stomp = *(drive) : *(5) : stage_stomp : *(volume) : /(1.5) ;
     
-    bypassed = *(bypass);
-    
-    output = _,_ : + <: stomp, bypassed : + <: _,_;
+    output = _,_ : + : ba.bypass1(bypass, stomp) <: _,_;
     
 };
 
