@@ -44,7 +44,7 @@ import("stdfaust.lib");
 process = output with {
     
     // Bypass button, 0 - pedal on, 1 -pedal off (bypass on)
-    bypass = vslider("99_bypass", 0, 0, 1, 0.5);
+    bypass = checkbox("99_bypass");
           
     drive = vslider("drive",63,0,100,0.01);
     volume = vslider("volume",0.5,0,1,0.001);
@@ -103,19 +103,23 @@ process = output with {
     // Stereo input and output, but during processing the signal is
     // converted to mono.
     
-    stage_stomp = _ <: (fi.highpass(1,720)*(1-voice)),*(voice) : + : fi.lowpass(1,9000) : _<: 
+    pre_filter = _ <: fi.highpass(1, 720) * min((1 - voice + 0.75 * drive / 100), 1),
+    *(max((voice - 0.75 * drive / 100), 0)) : + ;
+    
+    post_filter = _ <: fi.lowpass(1, 720) * min((1 - voice + 0.75 * drive / 100), 1),
+    *(max((voice - 0.75 * drive / 100), 0)) : + ;
+    
+    stage_stomp = pre_filter : fi.lowpass(1,9000) : _<: 
     _,*(-1.0) : tube(Rg,Cg,Kreg,Upor,bias,0), tube(Rg,Cg,Kreg,Upor,bias,0) : - : 
     fi.peak_eq(tonestack_low,tonestack_low_freq,tonestack_low_band) : 
     fi.peak_eq(tonestack_middle,tonestack_middle_freq,tonestack_middle_band) : 
-    fi.peak_eq(tonestack_high,tonestack_high_freq,tonestack_high_band) <: (fi.lowpass(1,720)*(1-
-    voice)),*(voice) : +;
+    fi.peak_eq(tonestack_high,tonestack_high_freq,tonestack_high_band) :
+    post_filter ;
     
-    stomp = fi.highpass(1,20) : *(ba.db2linear(drive*0.4))  : stage_stomp : 
-    *(ba.db2linear(volume*60.0)/100.0) : *(1.0 - bypass);
+    stomp = fi.highpass(1,20) : *(ba.db2linear(drive * 0.4 * (1 - voice * 0.5)))  : stage_stomp : 
+    *(ba.db2linear(volume * 60.0 * (1 - voice * 0.25) ) / 100.0) ;
     
-    bypassed = *(bypass);
-    
-    output = _,_ : + <: stomp, bypassed : + <: _,_;
+    output = _,_ : + : ba.bypass1(bypass, stomp) <: _,_;
     
 };
 

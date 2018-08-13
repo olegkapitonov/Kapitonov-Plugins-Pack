@@ -1,5 +1,8 @@
 /* ------------------------------------------------------------
+author: "Oleg Kapitonov"
+license: "GPLv3"
 name: "kpp_bluedream"
+version: "0.1b"
 Code generated with Faust 2.5.23 (https://faust.grame.fr)
 Compilation options: cpp, -scal -ftz 0
 ------------------------------------------------------------ */
@@ -601,6 +604,7 @@ class kpp_bluedream : public dsp {
 	
  private:
 	
+	FAUSTFLOAT fCheckbox0;
 	FAUSTFLOAT fVslider0;
 	FAUSTFLOAT fVslider1;
 	FAUSTFLOAT fVslider2;
@@ -620,7 +624,6 @@ class kpp_bluedream : public dsp {
 	float fConst12;
 	float fConst13;
 	float fConst14;
-	FAUSTFLOAT fVslider3;
 	float fConst15;
 	float fConst16;
 	float fConst17;
@@ -638,16 +641,16 @@ class kpp_bluedream : public dsp {
 	float fRec4[2];
 	float fRec10[2];
 	float fRec9[2];
-	FAUSTFLOAT fVslider4;
+	FAUSTFLOAT fVslider3;
 	float fConst22;
 	float fConst23;
 	float fRec3[3];
 	float fConst24;
-	FAUSTFLOAT fVslider5;
+	FAUSTFLOAT fVslider4;
 	float fConst25;
 	float fRec2[3];
 	float fConst26;
-	FAUSTFLOAT fVslider6;
+	FAUSTFLOAT fVslider5;
 	float fConst27;
 	float fRec1[3];
 	float fVec3[2];
@@ -656,17 +659,20 @@ class kpp_bluedream : public dsp {
  public:
 	
 	void metadata(Meta* m) { 
+		m->declare("author", "Oleg Kapitonov");
 		m->declare("basics.lib/name", "Faust Basic Element Library");
 		m->declare("basics.lib/version", "0.0");
 		m->declare("filename", "kpp_bluedream");
 		m->declare("filters.lib/name", "Faust Filters Library");
 		m->declare("filters.lib/version", "0.0");
+		m->declare("license", "GPLv3");
 		m->declare("maths.lib/author", "GRAME");
 		m->declare("maths.lib/copyright", "GRAME");
 		m->declare("maths.lib/license", "LGPL with exception");
 		m->declare("maths.lib/name", "Faust Math Library");
 		m->declare("maths.lib/version", "2.1");
 		m->declare("name", "kpp_bluedream");
+		m->declare("version", "0.1b");
 	}
 
 	virtual int getNumInputs() {
@@ -756,13 +762,13 @@ class kpp_bluedream : public dsp {
 	}
 	
 	virtual void instanceResetUserInterface() {
+		fCheckbox0 = FAUSTFLOAT(0.0f);
 		fVslider0 = FAUSTFLOAT(0.5f);
-		fVslider1 = FAUSTFLOAT(0.0f);
-		fVslider2 = FAUSTFLOAT(0.5f);
-		fVslider3 = FAUSTFLOAT(63.0f);
-		fVslider4 = FAUSTFLOAT(-6.9000000000000004f);
-		fVslider5 = FAUSTFLOAT(-3.8999999999999999f);
-		fVslider6 = FAUSTFLOAT(0.59999999999999998f);
+		fVslider1 = FAUSTFLOAT(0.5f);
+		fVslider2 = FAUSTFLOAT(63.0f);
+		fVslider3 = FAUSTFLOAT(-6.9000000000000004f);
+		fVslider4 = FAUSTFLOAT(-3.8999999999999999f);
+		fVslider5 = FAUSTFLOAT(0.59999999999999998f);
 		
 	}
 	
@@ -850,12 +856,12 @@ class kpp_bluedream : public dsp {
 	
 	virtual void buildUserInterface(UI* ui_interface) {
 		ui_interface->openVerticalBox("kpp_bluedream");
-		ui_interface->addVerticalSlider("99_bypass", &fVslider1, 0.0f, 0.0f, 1.0f, 0.5f);
-		ui_interface->addVerticalSlider("bass", &fVslider4, -6.9000001f, -15.0f, 15.0f, 0.100000001f);
-		ui_interface->addVerticalSlider("drive", &fVslider3, 63.0f, 0.0f, 100.0f, 0.00999999978f);
-		ui_interface->addVerticalSlider("middle", &fVslider5, -3.9000001f, -15.0f, 15.0f, 0.100000001f);
-		ui_interface->addVerticalSlider("treble", &fVslider6, 0.600000024f, -15.0f, 15.0f, 0.100000001f);
-		ui_interface->addVerticalSlider("voice", &fVslider2, 0.5f, 0.0f, 1.0f, 0.00100000005f);
+		ui_interface->addCheckButton("99_bypass", &fCheckbox0);
+		ui_interface->addVerticalSlider("bass", &fVslider3, -6.9000001f, -15.0f, 15.0f, 0.100000001f);
+		ui_interface->addVerticalSlider("drive", &fVslider2, 63.0f, 0.0f, 100.0f, 0.00999999978f);
+		ui_interface->addVerticalSlider("middle", &fVslider4, -3.9000001f, -15.0f, 15.0f, 0.100000001f);
+		ui_interface->addVerticalSlider("treble", &fVslider5, 0.600000024f, -15.0f, 15.0f, 0.100000001f);
+		ui_interface->addVerticalSlider("voice", &fVslider1, 0.5f, 0.0f, 1.0f, 0.00100000005f);
 		ui_interface->addVerticalSlider("volume", &fVslider0, 0.5f, 0.0f, 1.0f, 0.00100000005f);
 		ui_interface->closeBox();
 		
@@ -866,68 +872,72 @@ class kpp_bluedream : public dsp {
 		FAUSTFLOAT* input1 = inputs[1];
 		FAUSTFLOAT* output0 = outputs[0];
 		FAUSTFLOAT* output1 = outputs[1];
-		float fSlow0 = float(fVslider1);
-		float fSlow1 = (0.00999999978f * (powf(10.0f, (3.0f * float(fVslider0))) * (1.0f - fSlow0)));
-		float fSlow2 = float(fVslider2);
-		float fSlow3 = (1.0f - fSlow2);
-		float fSlow4 = powf(10.0f, (0.0199999996f * float(fVslider3)));
-		float fSlow5 = (fConst1 * fSlow4);
-		float fSlow6 = (fSlow4 * fSlow2);
-		float fSlow7 = float(fVslider4);
-		int iSlow8 = (fSlow7 > 0.0f);
-		float fSlow9 = (fConst23 * powf(10.0f, (0.0500000007f * fabsf(fSlow7))));
-		float fSlow10 = (iSlow8?fConst23:fSlow9);
-		float fSlow11 = ((fConst15 * (fConst15 - fSlow10)) + 1.0f);
-		float fSlow12 = ((fConst15 * (fConst15 + fSlow10)) + 1.0f);
-		float fSlow13 = (iSlow8?fSlow9:fConst23);
-		float fSlow14 = ((fConst15 * (fConst15 + fSlow13)) + 1.0f);
-		float fSlow15 = (1.0f - (fConst15 * (fSlow13 - fConst15)));
-		float fSlow16 = float(fVslider5);
-		int iSlow17 = (fSlow16 > 0.0f);
-		float fSlow18 = (fConst25 * powf(10.0f, (0.0500000007f * fabsf(fSlow16))));
-		float fSlow19 = (iSlow17?fConst25:fSlow18);
-		float fSlow20 = ((fConst24 * (fConst24 - fSlow19)) + 1.0f);
-		float fSlow21 = ((fConst24 * (fConst24 + fSlow19)) + 1.0f);
-		float fSlow22 = (iSlow17?fSlow18:fConst25);
-		float fSlow23 = ((fConst24 * (fConst24 + fSlow22)) + 1.0f);
-		float fSlow24 = (1.0f - (fConst24 * (fSlow22 - fConst24)));
-		float fSlow25 = float(fVslider6);
-		int iSlow26 = (fSlow25 > 0.0f);
-		float fSlow27 = (fConst27 * powf(10.0f, (0.0500000007f * fabsf(fSlow25))));
-		float fSlow28 = (iSlow26?fConst27:fSlow27);
-		float fSlow29 = ((fConst26 * (fConst26 - fSlow28)) + 1.0f);
-		float fSlow30 = ((fConst26 * (fConst26 + fSlow28)) + 1.0f);
-		float fSlow31 = (iSlow26?fSlow27:fConst27);
-		float fSlow32 = ((fConst26 * (fConst26 + fSlow31)) + 1.0f);
-		float fSlow33 = (1.0f - (fConst26 * (fSlow31 - fConst26)));
+		int iSlow0 = int(float(fCheckbox0));
+		float fSlow1 = float(fVslider1);
+		float fSlow2 = (0.00999999978f * powf(10.0f, (3.0f * (float(fVslider0) * (1.0f - (0.25f * fSlow1))))));
+		float fSlow3 = float(fVslider2);
+		float fSlow4 = (0.00749999983f * fSlow3);
+		float fSlow5 = min((fSlow4 + (1.0f - fSlow1)), 1.0f);
+		float fSlow6 = powf(10.0f, (0.0199999996f * (fSlow3 * (1.0f - (0.5f * fSlow1)))));
+		float fSlow7 = (fConst1 * fSlow6);
+		float fSlow8 = max((fSlow1 - fSlow4), 0.0f);
+		float fSlow9 = (fSlow6 * fSlow8);
+		float fSlow10 = float(fVslider3);
+		int iSlow11 = (fSlow10 > 0.0f);
+		float fSlow12 = (fConst23 * powf(10.0f, (0.0500000007f * fabsf(fSlow10))));
+		float fSlow13 = (iSlow11?fConst23:fSlow12);
+		float fSlow14 = ((fConst15 * (fConst15 - fSlow13)) + 1.0f);
+		float fSlow15 = ((fConst15 * (fConst15 + fSlow13)) + 1.0f);
+		float fSlow16 = (iSlow11?fSlow12:fConst23);
+		float fSlow17 = ((fConst15 * (fConst15 + fSlow16)) + 1.0f);
+		float fSlow18 = (1.0f - (fConst15 * (fSlow16 - fConst15)));
+		float fSlow19 = float(fVslider4);
+		int iSlow20 = (fSlow19 > 0.0f);
+		float fSlow21 = (fConst25 * powf(10.0f, (0.0500000007f * fabsf(fSlow19))));
+		float fSlow22 = (iSlow20?fConst25:fSlow21);
+		float fSlow23 = ((fConst24 * (fConst24 - fSlow22)) + 1.0f);
+		float fSlow24 = ((fConst24 * (fConst24 + fSlow22)) + 1.0f);
+		float fSlow25 = (iSlow20?fSlow21:fConst25);
+		float fSlow26 = ((fConst24 * (fConst24 + fSlow25)) + 1.0f);
+		float fSlow27 = (1.0f - (fConst24 * (fSlow25 - fConst24)));
+		float fSlow28 = float(fVslider5);
+		int iSlow29 = (fSlow28 > 0.0f);
+		float fSlow30 = (fConst27 * powf(10.0f, (0.0500000007f * fabsf(fSlow28))));
+		float fSlow31 = (iSlow29?fConst27:fSlow30);
+		float fSlow32 = ((fConst26 * (fConst26 - fSlow31)) + 1.0f);
+		float fSlow33 = ((fConst26 * (fConst26 + fSlow31)) + 1.0f);
+		float fSlow34 = (iSlow29?fSlow30:fConst27);
+		float fSlow35 = ((fConst26 * (fConst26 + fSlow34)) + 1.0f);
+		float fSlow36 = (1.0f - (fConst26 * (fSlow34 - fConst26)));
 		for (int i = 0; (i < count); i = (i + 1)) {
 			float fTemp0 = (float(input1[i]) + float(input0[i]));
-			fVec0[0] = fTemp0;
-			fRec7[0] = ((fConst17 * fRec7[1]) + (fConst18 * ((fConst15 * fTemp0) + (fConst19 * fVec0[1]))));
-			fVec1[0] = (fSlow4 * fRec7[0]);
-			fRec6[0] = ((fConst3 * fRec6[1]) + (fConst4 * ((fSlow5 * fRec7[0]) + (fConst20 * fVec1[1]))));
-			float fTemp1 = ((fSlow3 * fRec6[0]) + (fSlow6 * fRec7[0]));
-			fVec2[0] = fTemp1;
-			fRec5[0] = ((fConst13 * fRec5[1]) + (fConst14 * (fTemp1 + fVec2[1])));
+			float fTemp1 = (iSlow0?0.0f:fTemp0);
+			fVec0[0] = fTemp1;
+			fRec7[0] = ((fConst17 * fRec7[1]) + (fConst18 * ((fConst15 * fTemp1) + (fConst19 * fVec0[1]))));
+			fVec1[0] = (fSlow6 * fRec7[0]);
+			fRec6[0] = ((fConst3 * fRec6[1]) + (fConst4 * ((fSlow7 * fRec7[0]) + (fConst20 * fVec1[1]))));
+			float fTemp2 = ((fSlow5 * fRec6[0]) + (fSlow9 * fRec7[0]));
+			fVec2[0] = fTemp2;
+			fRec5[0] = ((fConst13 * fRec5[1]) + (fConst14 * (fTemp2 + fVec2[1])));
 			fRec8[0] = (fRec8[1] + (fConst21 * (fRec5[0] - (fRec8[1] + fRec4[1]))));
-			float fTemp2 = (max((0.426999986f * (fRec5[0] + (-0.200000003f - fRec8[0]))), 0.0f) + 1.0f);
-			fRec4[0] = (0.800000012f * (((fRec5[0] - fRec8[0]) / fTemp2) + (0.200000003f * (1.0f - (1.0f / fTemp2)))));
+			float fTemp3 = (max((0.426999986f * (fRec5[0] + (-0.200000003f - fRec8[0]))), 0.0f) + 1.0f);
+			fRec4[0] = (0.800000012f * (((fRec5[0] - fRec8[0]) / fTemp3) + (0.200000003f * (1.0f - (1.0f / fTemp3)))));
 			fRec10[0] = (fRec10[1] + (fConst21 * (0.0f - ((fRec5[0] + fRec10[1]) + fRec9[1]))));
-			float fTemp3 = (fRec5[0] + fRec10[0]);
-			float fTemp4 = (max((0.426999986f * (-0.200000003f - fTemp3)), 0.0f) + 1.0f);
-			fRec9[0] = (0.800000012f * (((0.0f - fTemp3) / fTemp4) + (0.200000003f * (1.0f - (1.0f / fTemp4)))));
-			float fTemp5 = (fConst10 * fRec3[1]);
-			fRec3[0] = (max(0.0f, (min(0.5f, fRec4[0]) + 0.200000003f)) - (max(0.0f, (min(0.5f, fRec9[0]) + 0.200000003f)) + (((fRec3[2] * fSlow11) + fTemp5) / fSlow12)));
-			float fTemp6 = (fConst8 * fRec2[1]);
-			fRec2[0] = ((((fTemp5 + (fRec3[0] * fSlow14)) + (fRec3[2] * fSlow15)) / fSlow12) - (((fRec2[2] * fSlow20) + fTemp6) / fSlow21));
-			float fTemp7 = (fConst6 * fRec1[1]);
-			fRec1[0] = ((((fTemp6 + (fRec2[0] * fSlow23)) + (fRec2[2] * fSlow24)) / fSlow21) - (((fRec1[2] * fSlow29) + fTemp7) / fSlow30));
-			float fTemp8 = (((fTemp7 + (fRec1[0] * fSlow32)) + (fRec1[2] * fSlow33)) / fSlow30);
-			fVec3[0] = fTemp8;
-			fRec0[0] = ((fConst3 * fRec0[1]) + (fConst4 * (fTemp8 + fVec3[1])));
-			float fTemp9 = ((fSlow1 * ((fSlow3 * fRec0[0]) + (fSlow2 * fTemp8))) + (fSlow0 * fTemp0));
-			output0[i] = FAUSTFLOAT(fTemp9);
-			output1[i] = FAUSTFLOAT(fTemp9);
+			float fTemp4 = (fRec5[0] + fRec10[0]);
+			float fTemp5 = (max((0.426999986f * (-0.200000003f - fTemp4)), 0.0f) + 1.0f);
+			fRec9[0] = (0.800000012f * (((0.0f - fTemp4) / fTemp5) + (0.200000003f * (1.0f - (1.0f / fTemp5)))));
+			float fTemp6 = (fConst10 * fRec3[1]);
+			fRec3[0] = (max(0.0f, (min(0.5f, fRec4[0]) + 0.200000003f)) - (max(0.0f, (min(0.5f, fRec9[0]) + 0.200000003f)) + (((fRec3[2] * fSlow14) + fTemp6) / fSlow15)));
+			float fTemp7 = (fConst8 * fRec2[1]);
+			fRec2[0] = ((((fTemp6 + (fRec3[0] * fSlow17)) + (fRec3[2] * fSlow18)) / fSlow15) - (((fRec2[2] * fSlow23) + fTemp7) / fSlow24));
+			float fTemp8 = (fConst6 * fRec1[1]);
+			fRec1[0] = ((((fTemp7 + (fRec2[0] * fSlow26)) + (fRec2[2] * fSlow27)) / fSlow24) - (((fRec1[2] * fSlow32) + fTemp8) / fSlow33));
+			float fTemp9 = (((fTemp8 + (fRec1[0] * fSlow35)) + (fRec1[2] * fSlow36)) / fSlow33);
+			fVec3[0] = fTemp9;
+			fRec0[0] = ((fConst3 * fRec0[1]) + (fConst4 * (fTemp9 + fVec3[1])));
+			float fTemp10 = (iSlow0?fTemp0:(fSlow2 * ((fSlow5 * fRec0[0]) + (fSlow8 * fTemp9))));
+			output0[i] = FAUSTFLOAT(fTemp10);
+			output1[i] = FAUSTFLOAT(fTemp10);
 			fVec0[1] = fVec0[0];
 			fRec7[1] = fRec7[0];
 			fVec1[1] = fVec1[0];
