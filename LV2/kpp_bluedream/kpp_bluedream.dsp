@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Oleg Kapitonov
+ * Copyright (C) 2019 Oleg Kapitonov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -37,7 +37,7 @@
 declare name "kpp_bluedream";
 declare author "Oleg Kapitonov";
 declare license "GPLv3";
-declare version "0.1b";
+declare version "1.0RC1";
 
 import("stdfaust.lib"); 
 
@@ -50,51 +50,34 @@ process = output with {
     volume = vslider("volume",0.5,0,1,0.001);
     voice = vslider("voice",0.5,0,1,0.001);
 
-    tonestack_low = vslider("bass",-6.9,-15,15,0.1);
-    tonestack_middle = vslider("middle",-3.9,-15,15,0.1);
-    tonestack_high = vslider("treble",0.6,-15,15,0.1);
+    tonestack_low = vslider("bass",0,-15,15,0.1);
+    tonestack_middle = vslider("middle",0,-15,15,0.1);
+    tonestack_high = vslider("treble",0,-15,15,0.1);
     
-    tonestack_low_freq = 20;
+    tonestack_low_freq = 70;
     tonestack_middle_freq = 500;
     tonestack_high_freq = 10000;
     
-    tonestack_low_band = 400;
+    tonestack_low_band = 200;
     tonestack_middle_band = 700;
     tonestack_high_band = 18000;
     
-    /*-----Model of the tube in a push-pull amplifier-------*/
+    clamp = min(2.0) : max(-2.0);
     
     // Bias of each half-wave so that they better match
     bias = 0.2;
-    
-    // Grid resistor
-    Rg = 50000;
-    
-    // Grid capacitor
-    Cgb = 100;
     
     // Distortion threshold, if the signal is bigger
     // it starts to get distorted
     Upor = 0.2;
     
     // Softness of distortion
-    Kreg = 0.427;
+    Kreg = 1.0;
     
-    tau = 1/ma.SR;
-    Cg = Cgb*1e-9;
-    
-    // Grid leak resistor (between the grid and the ground)
-    Remax = 200000;
-    
-    // Model of the tube cascade, 0.5 is a hard clipping threshold    
-    tube(Rg,Cg,Kreg,Upor,bias,cut) = main ~ _ : min(0.5) : +(bias) : max(cut) with {
+    tube(Kreg,Upor,bias,cut) = main : +(bias) : max(cut) with {
         Ks(x) = 1/(max((x-Upor)*(Kreg),0)+1);
         Ksplus(x) = Upor - x*Upor;
-        main(Uout,Uin) = (Ug * Ks(Ug) + Ksplus(Ks(Ug))) * Remax/(Remax+Rg) with {
-            Ug = Uin - Uc letrec {
-                'Uc = Uc + (Uin - Uc - Uout)/Rg/Cg*tau;
-            };
-        };
+        main(Uin) = (Uin * Ks(Uin) + Ksplus(Ks(Uin)));
     };
     
     /*--------Processing chain-----------------*/
@@ -110,14 +93,16 @@ process = output with {
     *(max((voice - 0.75 * drive / 100), 0)) : + ;
     
     stage_stomp = pre_filter : fi.lowpass(1,9000) : _<: 
-    _,*(-1.0) : tube(Rg,Cg,Kreg,Upor,bias,0), tube(Rg,Cg,Kreg,Upor,bias,0) : - : 
+    _,*(-1.0) : tube(Kreg,Upor,bias,0), tube(Kreg,Upor,bias,0) : - :
+    *(ba.db2linear(volume * 50.0 * (1 - voice * 0.25) ) / 100.0) :
     fi.peak_eq(tonestack_low,tonestack_low_freq,tonestack_low_band) : 
     fi.peak_eq(tonestack_middle,tonestack_middle_freq,tonestack_middle_band) : 
     fi.peak_eq(tonestack_high,tonestack_high_freq,tonestack_high_band) :
+    clamp :
     post_filter ;
     
-    stomp = fi.highpass(1,20) : *(ba.db2linear(drive * 0.4 * (1 - voice * 0.5)))  : stage_stomp : 
-    *(ba.db2linear(volume * 60.0 * (1 - voice * 0.25) ) / 100.0) ;
+    stomp = fi.dcblocker : clamp : *(ba.db2linear(drive * 0.4 * (1 - voice * 0.5))-1)  :
+    stage_stomp : fi.dcblocker;
     
     output = _,_ : + : ba.bypass1(bypass, stomp) <: _,_;
     

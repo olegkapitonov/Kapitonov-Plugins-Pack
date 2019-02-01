@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Oleg Kapitonov
+ * Copyright (C) 2019 Oleg Kapitonov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,15 +24,15 @@
  *    
  * input->pre_filter->*drive_knob->distortion->equalizer->post-filter->*volume_knob->output
  *
- *
- *  pre-filter - highpass, 1 order, 50-3900 Hz. The frequency depends
- *  on the _voice_ knob.
+ *  pre-filter - highpass, 1 order, 720 Hz,
+ *  highpass, 1 order, 320 Hz,
+ *  lowpass, 1 order, 1500 Hz
+ * 
+ *  Voice knob disables pre-filter in left position.
  *
  *  distortion - nonlinear element, hard clipper.
  *  
- *  equalizer - tonestack, bass-middle-treble. Middle lowered by 15 dB,
- *  Bass increased by 15 dB. This creates a sound characteristic 
- *  of the "distortion" pedals.
+ *  equalizer - tonestack, bass-middle-treble.
  *
  *  post-filter - lowpass, 1 order, 720 Hz.
  */
@@ -40,12 +40,15 @@
 declare name "kpp_distruction";
 declare author "Oleg Kapitonov";
 declare license "GPLv3";
-declare version "0.1b";
+declare version "1.0RC1";
 
 import("stdfaust.lib"); 
 
 process = output with {
 
+    // Bypass button, 0 - pedal on, 1 -pedal off (bypass on)
+    bypass = checkbox("99_bypass");
+          
     drive = vslider("drive",63,0,100,0.01);
     volume = vslider("volume",0.5,0,1,0.001);
     voice = vslider("voice",0.5,0,1,0.001);
@@ -54,29 +57,48 @@ process = output with {
     tonestack_middle = vslider("middle",0,-15,15,0.1);
     tonestack_high = vslider("treble",0,-15,15,0.1);
     
-    tonestack_low_freq = 20;
+    tonestack_low_freq = 100;
     tonestack_middle_freq = 500;
-    tonestack_high_freq = 10000;
+    tonestack_high_freq = 8000;
     
-    tonestack_low_band = 400;
+    tonestack_low_band = 200;
     tonestack_middle_band = 700;
-    tonestack_high_band = 18000;
+    tonestack_high_band = 3000;
     
-    /*--------Processing chain-----------------*/
+    clamp = min(2.0) : max(-2.0);
     
     // Distortion threshold, bigger signal is cutting
     Upor = 0.2;
     
-    // Pre-filter frequency
-    filt_freq = 50*(1-voice) + 3900*voice;
+    // Bias of each half-wave so that they better match
+    bias = 0.2;
+
     
-    stage_stomp = fi.highpass(1,filt_freq) : fi.lowpass(1,5200) : _<: _,*(-1.0) : (max(0.0) : min(Upor)), (max(0.0) : min(Upor)) : - : fi.peak_eq(tonestack_low+15.0,tonestack_low_freq,tonestack_low_band) : fi.peak_eq(tonestack_middle-15.0,tonestack_middle_freq,tonestack_middle_band) : 
-    fi.peak_eq(tonestack_high,tonestack_high_freq,tonestack_high_band) : fi.lowpass(1, 720) :
-    fi.highpass(2, 320) ;
+    pre_filter = fi.lowpass(1,1500) <: (fi.highpass(1, 720) : fi.highpass(1, 320)),_ :
+    *(voice),*(1 - voice) : +;
     
-    stomp = *(drive) : *(5) : stage_stomp : *(volume) : /(1.5) ;
+    // Softness of distortion
+    Kreg = 1.0;
     
-    output = _ : stomp : _ ;
+    tube(Kreg,Upor,bias,cut) = main : +(bias) : max(cut) with {
+        Ks(x) = 1/(max((x-Upor)*(Kreg),0)+1);
+        Ksplus(x) = Upor - x*Upor;
+        main(Uin) = (Uin * Ks(Uin) + Ksplus(Ks(Uin)));
+    };
+    
+    
+    stage_stomp = pre_filter : _<: 
+    _,*(-1.0) : tube(Kreg,Upor,bias,0), tube(Kreg,Upor,bias,0) : - :
+    fi.peak_eq(tonestack_low,tonestack_low_freq,tonestack_low_band) :
+    fi.peak_eq(tonestack_middle - 10.0,tonestack_middle_freq,tonestack_middle_band) : 
+    fi.peak_eq(tonestack_high,tonestack_high_freq,tonestack_high_band) :
+    fi.lowpass(1,720) :
+    clamp;
+    
+    stomp = fi.dcblocker : clamp : *(ba.db2linear(drive * 60.0 / 100.0)-1) :
+    *(5) : stage_stomp : *((ba.db2linear(volume * 30.0)-1) / 100.0) : /(1.5) : fi.dcblocker;
+    
+    output = _ : stomp : _;
     
 };
 

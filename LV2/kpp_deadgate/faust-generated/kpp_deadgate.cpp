@@ -1,5 +1,8 @@
 /* ------------------------------------------------------------
+author: "Oleg Kapitonov"
+license: "GPLv3"
 name: "kpp_deadgate"
+version: "0.1b"
 Code generated with Faust 2.5.23 (https://faust.grame.fr)
 Compilation options: cpp, -scal -ftz 0
 ------------------------------------------------------------ */
@@ -783,11 +786,13 @@ class kpp_deadgate : public dsp {
 	void metadata(Meta* m) { 
 		m->declare("analyzers.lib/name", "Faust Analyzer Library");
 		m->declare("analyzers.lib/version", "0.0");
+		m->declare("author", "Oleg Kapitonov");
 		m->declare("basics.lib/name", "Faust Basic Element Library");
 		m->declare("basics.lib/version", "0.0");
 		m->declare("filename", "kpp_deadgate");
 		m->declare("filters.lib/name", "Faust Filters Library");
 		m->declare("filters.lib/version", "0.0");
+		m->declare("license", "GPLv3");
 		m->declare("maths.lib/author", "GRAME");
 		m->declare("maths.lib/copyright", "GRAME");
 		m->declare("maths.lib/license", "LGPL with exception");
@@ -798,6 +803,7 @@ class kpp_deadgate : public dsp {
 		m->declare("name", "kpp_deadgate");
 		m->declare("signals.lib/name", "Faust Signal Routing Library");
 		m->declare("signals.lib/version", "0.0");
+		m->declare("version", "0.1b");
 	}
 
 	virtual int getNumInputs() {
@@ -905,7 +911,7 @@ class kpp_deadgate : public dsp {
 		fConst47 = (1.0f - ((1.0f - fConst45) / fConst44));
 		fConst48 = (1.0f / kpp_deadgate_faustpower2_f(fConst44));
 		fConst49 = (2.0f * (1.0f - fConst48));
-		iConst50 = int((0.100000001f * fConst0));
+		iConst50 = int((0.0199999996f * fConst0));
 		fConst51 = expf((0.0f - (50.0f / fConst0)));
 		fConst52 = (((fConst21 + 1.0f) / fConst20) + 1.0f);
 		fConst53 = (1.0f / fConst52);
@@ -1461,7 +1467,7 @@ class kpp_deadgate : public dsp {
 			float fTemp49 = ((fRec68[1] > fTemp48)?fConst51:fConst1);
 			fRec69[0] = ((fRec69[1] * fTemp49) + (fTemp48 * (1.0f - fTemp49)));
 			fRec68[0] = fRec69[0];
-			float fTemp50 = ((((((fRec0[0] * fTemp7) + (fRec13[0] * fTemp16)) + (fRec26[0] * fTemp24)) + (fRec38[0] * fTemp31)) + (fRec49[0] * fTemp37)) + (fConst84 * ((fRec59[0] * fTemp42) + (fRec68[0] * fTemp46))));
+			float fTemp50 = (0.501187205f * ((((((fRec0[0] * fTemp7) + (fRec13[0] * fTemp16)) + (fRec26[0] * fTemp24)) + (fRec38[0] * fTemp31)) + (fRec49[0] * fTemp37)) + (fConst84 * ((fRec59[0] * fTemp42) + (fRec68[0] * fTemp46)))));
 			output0[i] = FAUSTFLOAT(fTemp50);
 			output1[i] = FAUSTFLOAT(fTemp50);
 			fVec0[1] = fVec0[0];

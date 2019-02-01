@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Oleg Kapitonov
+ * Copyright (C) 2019 Oleg Kapitonov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,10 +33,10 @@
  * 
 */
 
-declare name "kpp_distruction";
+declare name "kpp_deadgate";
 declare author "Oleg Kapitonov";
 declare license "GPLv3";
-declare version "0.1b";
+declare version "1.0RC1";
 
 import("stdfaust.lib"); 
 
@@ -49,15 +49,16 @@ process = output with {
     (min(-deadzone_knob) : +(deadzone_knob)) : + ;
     
   multigate = _ : fi.filterbank(3, (65, 150, 300, 600, 1200, 2400)) : 
-    ef.gate_mono(noizegate_knob, 0.01, 0.1, 0.02),
-    ef.gate_mono(noizegate_knob, 0.01, 0.1, 0.02),
-    ef.gate_mono(noizegate_knob, 0.01, 0.1, 0.02),
-    ef.gate_mono(noizegate_knob, 0.01, 0.1, 0.02),
-    ef.gate_mono(noizegate_knob, 0.01, 0.1, 0.02),
-    ef.gate_mono(noizegate_knob, 0.01, 0.1, 0.02),
-    ef.gate_mono(noizegate_knob, 0.01, 0.1, 0.02) :> _;
+    ef.gate_mono(noizegate_knob, 0.01, 0.02, 0.02),
+    ef.gate_mono(noizegate_knob, 0.01, 0.02, 0.02),
+    ef.gate_mono(noizegate_knob, 0.01, 0.02, 0.02),
+    ef.gate_mono(noizegate_knob, 0.01, 0.02, 0.02),
+    ef.gate_mono(noizegate_knob, 0.01, 0.02, 0.02),
+    ef.gate_mono(noizegate_knob, 0.01, 0.02, 0.02),
+    ef.gate_mono(noizegate_knob, 0.01, 0.02, 0.02) :> _;
     
-    output = _ : fi.highpass(1,10) : deadzone : multigate : _ ;
+    output = _ : fi.highpass(1,10) : deadzone : multigate :
+    *(ba.db2linear(-6.0)) : _ ;
 };
  
  

@@ -15,9 +15,9 @@
 <https://faustlv2.bitbucket.io/kpp_distructionui>
     a ui:X11UI ;
     ui:binary <kpp_distructionui.so> ;
-        lv2:requiredFeature ui:idle ; 
+        lv2:requiredFeature ui:idleInterface ; 
         lv2:requiredFeature ui:fixedSize;
-        lv2:extensionData ui:idle ; 
+        lv2:extensionData ui:idleInterface ; 
         ui:requiredFeature ui:makeResident .
 
 <https://faustlv2.bitbucket.io/kpp_distruction> a lv2:FilterPlugin .

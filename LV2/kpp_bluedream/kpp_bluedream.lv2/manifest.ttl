@@ -15,9 +15,9 @@
 <https://faustlv2.bitbucket.io/kpp_bluedreamui>
     a ui:X11UI ;
     ui:binary <kpp_bluedreamui.so> ;
-        lv2:requiredFeature ui:idle ; 
+        lv2:requiredFeature ui:idleInterface ; 
         lv2:requiredFeature ui:fixedSize;
-        lv2:extensionData ui:idle ; 
+        lv2:extensionData ui:idleInterface ; 
         ui:requiredFeature ui:makeResident .
 
 <https://faustlv2.bitbucket.io/kpp_bluedream> a lv2:FilterPlugin .

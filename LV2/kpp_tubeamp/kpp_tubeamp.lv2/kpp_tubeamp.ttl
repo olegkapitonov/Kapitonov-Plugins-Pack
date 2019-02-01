@@ -1,0 +1,152 @@
+@prefix doap:  <http://usefulinc.com/ns/doap#> .
+@prefix foaf:  <http://xmlns.com/foaf/0.1/> .
+@prefix lv2:   <http://lv2plug.in/ns/lv2core#> .
+@prefix ui:    <http://lv2plug.in/ns/extensions/ui#> .
+@prefix epp:   <http://lv2plug.in/ns/ext/port-props#> .
+@prefix atom:  <http://lv2plug.in/ns/ext/atom#> .
+@prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix units: <http://lv2plug.in/ns/extensions/units#> .
+@prefix patch: <http://lv2plug.in/ns/ext/patch#> .
+@prefix state: <http://lv2plug.in/ns/ext/state#> .
+@prefix urid:  <http://lv2plug.in/ns/ext/urid#> .
+@prefix work:  <http://lv2plug.in/ns/ext/worker#> .
+
+<https://faustlv2.bitbucket.io/kpp_tubeamp#profile>
+	a lv2:Parameter ;
+	rdfs:label "profile" ;
+	rdfs:range atom:Path .
+
+<https://faustlv2.bitbucket.io/kpp_tubeamp>
+       a lv2:Plugin ;
+       doap:name "kpp_tubeAmp" ;
+       lv2:binary <kpp_tubeamp.so> ;
+       lv2:requiredFeature state:loadDefaultState ,
+          urid:map ,
+          work:schedule ;
+       lv2:optionalFeature epp:supportsStrictBounds ;
+       lv2:optionalFeature lv2:hardRtCapable, state:threadSafeRestore ;
+       lv2:extensionData state:interface ,
+          work:interface ;
+       ui:ui <https://faustlv2.bitbucket.io/kpp_tubeampui> ;
+       patch:writable <https://faustlv2.bitbucket.io/kpp_tubeamp#profile> ;
+    lv2:port [
+	a lv2:InputPort ;
+	a lv2:ControlPort ;
+	lv2:index 0 ;
+	lv2:symbol "Bass_0" ;
+	lv2:name "Bass" ;
+        lv2:portProperty epp:hasStrictBounds ;
+        epp:rangeSteps 200 ;
+	lv2:default 0 ;
+	lv2:minimum -10 ;
+	lv2:maximum 10 ;
+    ] , [
+	a lv2:InputPort ;
+	a lv2:ControlPort ;
+	lv2:index 1 ;
+	lv2:symbol "Middle_1" ;
+	lv2:name "Middle" ;
+        lv2:portProperty epp:hasStrictBounds ;
+        epp:rangeSteps 200 ;
+	lv2:default 0 ;
+	lv2:minimum -10 ;
+	lv2:maximum 10 ;
+    ] , [
+	a lv2:InputPort ;
+	a lv2:ControlPort ;
+	lv2:index 2 ;
+	lv2:symbol "Treble_2" ;
+	lv2:name "Treble" ;
+        lv2:portProperty epp:hasStrictBounds ;
+        epp:rangeSteps 200 ;
+	lv2:default 0 ;
+	lv2:minimum -10 ;
+	lv2:maximum 10 ;
+    ] , [
+	a lv2:InputPort ;
+	a lv2:ControlPort ;
+	lv2:index 3 ;
+	lv2:symbol "drive_3" ;
+	lv2:name "drive" ;
+        lv2:portProperty epp:hasStrictBounds ;
+        epp:rangeSteps 10000 ;
+	lv2:default 100 ;
+	lv2:minimum 0 ;
+	lv2:maximum 100 ;
+    ] , [
+	a lv2:InputPort ;
+	a lv2:ControlPort ;
+	lv2:index 4 ;
+	lv2:symbol "mastergain_4" ;
+	lv2:name "mastergain" ;
+        lv2:portProperty epp:hasStrictBounds ;
+        epp:rangeSteps 10000;
+	lv2:default 50 ;
+	lv2:minimum 0 ;
+	lv2:maximum 100 ;
+    ] , [
+	a lv2:InputPort ;
+	a lv2:ControlPort ;
+	lv2:index 5 ;
+	lv2:symbol "volume_5" ;
+	lv2:name "volume" ;
+        lv2:portProperty epp:hasStrictBounds ;
+        epp:rangeSteps 100 ;
+	lv2:default 1 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 ;
+    ] , [
+	a lv2:InputPort ;
+	a lv2:ControlPort ;
+	lv2:index 6 ;
+	lv2:symbol "cabinet_6" ;
+	lv2:name "cabinet" ;
+        lv2:portProperty epp:hasStrictBounds ;
+        epp:rangeSteps 100;
+	lv2:default 1.0;
+	lv2:minimum 0;
+	lv2:maximum 1;
+    ] , [
+	a lv2:InputPort ;
+	a lv2:AudioPort ;
+	lv2:index 7 ;
+	lv2:symbol "in0" ;
+	lv2:name "in0" ;
+    ] , [
+	a lv2:InputPort ;
+	a lv2:AudioPort ;
+	lv2:index 8 ;
+	lv2:symbol "in1" ;
+	lv2:name "in1" ;
+    ] , [
+	a lv2:OutputPort ;
+	a lv2:AudioPort ;
+	lv2:index 9 ;
+	lv2:symbol "out0" ;
+	lv2:name "out0" ;
+    ] , [
+	a lv2:OutputPort ;
+	a lv2:AudioPort ;
+	lv2:index 10 ;
+	lv2:symbol "out1" ;
+	lv2:name "out1" ;
+    ] , [
+  a lv2:InputPort ,
+	atom:AtomPort ;
+	atom:bufferType atom:Sequence ;
+	atom:supports patch:Message ;
+  lv2:designation lv2:control ;
+	lv2:index 11 ;
+  lv2:symbol "control" ;
+	lv2:name "Control"
+	] , [
+  a lv2:OutputPort ,
+	atom:AtomPort ;
+	atom:bufferType atom:Sequence ;
+	atom:supports patch:Message ;
+  lv2:designation lv2:control ;
+	lv2:index 12 ;
+  lv2:symbol "notify" ;
+	lv2:name "Notify"
+	] .
