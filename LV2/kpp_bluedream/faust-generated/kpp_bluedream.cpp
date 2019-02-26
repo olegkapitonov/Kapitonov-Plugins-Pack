@@ -2,7 +2,7 @@
 author: "Oleg Kapitonov"
 license: "GPLv3"
 name: "kpp_bluedream"
-version: "0.9b"
+version: "1.0"
 Code generated with Faust 2.5.23 (https://faust.grame.fr)
 Compilation options: cpp, -scal -ftz 0
 ------------------------------------------------------------ */
@@ -665,7 +665,7 @@ class kpp_bluedream : public dsp {
 		m->declare("maths.lib/name", "Faust Math Library");
 		m->declare("maths.lib/version", "2.1");
 		m->declare("name", "kpp_bluedream");
-		m->declare("version", "0.9b");
+		m->declare("version", "1.0");
 	}
 
 	virtual int getNumInputs() {
@@ -754,9 +754,9 @@ class kpp_bluedream : public dsp {
 		fVslider0 = FAUSTFLOAT(0.5f);
 		fVslider1 = FAUSTFLOAT(63.0f);
 		fVslider2 = FAUSTFLOAT(0.5f);
-		fVslider3 = FAUSTFLOAT(-6.9000000000000004f);
-		fVslider4 = FAUSTFLOAT(-3.8999999999999999f);
-		fVslider5 = FAUSTFLOAT(0.59999999999999998f);
+		fVslider3 = FAUSTFLOAT(0.0f);
+		fVslider4 = FAUSTFLOAT(0.0f);
+		fVslider5 = FAUSTFLOAT(0.0f);
 		
 	}
 	
@@ -837,10 +837,10 @@ class kpp_bluedream : public dsp {
 	virtual void buildUserInterface(UI* ui_interface) {
 		ui_interface->openVerticalBox("kpp_bluedream");
 		ui_interface->addCheckButton("99_bypass", &fCheckbox0);
-		ui_interface->addVerticalSlider("bass", &fVslider3, -6.9000001f, -15.0f, 15.0f, 0.100000001f);
+		ui_interface->addVerticalSlider("bass", &fVslider3, 0.0f, -15.0f, 15.0f, 0.100000001f);
 		ui_interface->addVerticalSlider("drive", &fVslider1, 63.0f, 0.0f, 100.0f, 0.00999999978f);
-		ui_interface->addVerticalSlider("middle", &fVslider4, -3.9000001f, -15.0f, 15.0f, 0.100000001f);
-		ui_interface->addVerticalSlider("treble", &fVslider5, 0.600000024f, -15.0f, 15.0f, 0.100000001f);
+		ui_interface->addVerticalSlider("middle", &fVslider4, 0.0f, -15.0f, 15.0f, 0.100000001f);
+		ui_interface->addVerticalSlider("treble", &fVslider5, 0.0f, -15.0f, 15.0f, 0.100000001f);
 		ui_interface->addVerticalSlider("voice", &fVslider0, 0.5f, 0.0f, 1.0f, 0.00100000005f);
 		ui_interface->addVerticalSlider("volume", &fVslider2, 0.5f, 0.0f, 1.0f, 0.00100000005f);
 		ui_interface->closeBox();

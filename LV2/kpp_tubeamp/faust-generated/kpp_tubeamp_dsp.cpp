@@ -2,7 +2,7 @@
 author: "Oleg Kapitonov"
 license: "GPLv3"
 name: "kpp_tubeamp"
-version: "0.9b"
+version: "1.0"
 Code generated with Faust 2.5.23 (https://faust.grame.fr)
 Compilation options: cpp, -scal -ftz 0
 ------------------------------------------------------------ */
@@ -79,7 +79,7 @@ class mydsp : public dsp {
 		m->declare("maths.lib/name", "Faust Math Library");
 		m->declare("maths.lib/version", "2.1");
 		m->declare("name", "kpp_tubeamp");
-		m->declare("version", "0.9b");
+		m->declare("version", "1.0");
 	}
 
 	virtual int getNumInputs() {

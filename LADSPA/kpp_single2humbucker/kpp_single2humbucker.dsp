@@ -27,7 +27,7 @@
 declare name "kpp_single2humbucker";
 declare author "Oleg Kapitonov";
 declare license "GPLv3";
-declare version "1.0RC1";
+declare version "1.0";
 
 import("stdfaust.lib"); 
 

@@ -34,14 +34,11 @@
 declare name "kpp_octaver";
 declare author "Oleg Kapitonov";
 declare license "GPLv3";
-declare version "1.0RC1";
+declare version "1.0";
 
 import("stdfaust.lib"); 
 
 process = output with {
-    
-    // Bypass button, 0 - pedal on, 1 -pedal off (bypass on)
-    bypass = checkbox("99_bypass");
           
     level_d1 = ba.db2linear(-20 + vslider("octave1",0,0,30,0.01));
     level_d2 = ba.db2linear(-20 + vslider("octave2",0,0,30,0.01));

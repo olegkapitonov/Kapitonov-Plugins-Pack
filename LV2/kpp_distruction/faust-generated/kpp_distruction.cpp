@@ -2,7 +2,7 @@
 author: "Oleg Kapitonov"
 license: "GPLv3"
 name: "kpp_distruction"
-version: "1.0RC1"
+version: "1.0"
 Code generated with Faust 2.5.23 (https://faust.grame.fr)
 Compilation options: cpp, -scal -ftz 0
 ------------------------------------------------------------ */
@@ -618,38 +618,42 @@ class kpp_distruction : public dsp {
 	float fConst8;
 	float fConst9;
 	float fConst10;
-	FAUSTFLOAT fVslider1;
 	float fConst11;
 	float fConst12;
 	float fConst13;
 	float fConst14;
+	FAUSTFLOAT fVslider1;
 	float fConst15;
 	float fConst16;
 	float fConst17;
 	float fConst18;
+	float fConst19;
+	float fConst20;
+	float fConst21;
+	float fConst22;
 	FAUSTFLOAT fVslider2;
 	float fVec0[2];
 	float fRec8[2];
 	float fVec1[2];
 	float fRec7[2];
-	float fConst19;
-	float fRec6[2];
-	float fConst20;
-	float fRec5[2];
-	float fConst21;
-	FAUSTFLOAT fVslider3;
-	float fConst22;
 	float fConst23;
-	float fRec4[3];
+	float fRec6[2];
 	float fConst24;
-	FAUSTFLOAT fVslider4;
+	FAUSTFLOAT fVslider3;
 	float fConst25;
-	float fRec3[3];
 	float fConst26;
-	FAUSTFLOAT fVslider5;
+	float fRec5[3];
 	float fConst27;
-	float fRec2[3];
+	FAUSTFLOAT fVslider4;
+	float fConst28;
+	float fRec4[3];
+	float fConst29;
+	FAUSTFLOAT fVslider5;
+	float fConst30;
+	float fRec3[3];
 	float fVec2[2];
+	float fRec2[2];
+	float fConst31;
 	float fRec1[2];
 	float fVec3[2];
 	float fRec0[2];
@@ -670,7 +674,7 @@ class kpp_distruction : public dsp {
 		m->declare("maths.lib/name", "Faust Math Library");
 		m->declare("maths.lib/version", "2.1");
 		m->declare("name", "kpp_distruction");
-		m->declare("version", "1.0RC1");
+		m->declare("version", "1.0");
 	}
 
 	virtual int getNumInputs() {
@@ -729,33 +733,37 @@ class kpp_distruction : public dsp {
 	virtual void instanceConstants(int samplingFreq) {
 		fSamplingFreq = samplingFreq;
 		fConst0 = min(192000.0f, max(1.0f, float(fSamplingFreq)));
-		fConst1 = (1.0f / tanf((2261.94678f / fConst0)));
+		fConst1 = (1.0f / tanf((219.911484f / fConst0)));
 		fConst2 = (fConst1 + 1.0f);
 		fConst3 = (0.0f - ((1.0f - fConst1) / fConst2));
 		fConst4 = (1.0f / fConst2);
-		fConst5 = tanf((25132.7422f / fConst0));
-		fConst6 = (2.0f * (1.0f - (1.0f / kpp_distruction_faustpower2_f(fConst5))));
-		fConst7 = tanf((1570.79639f / fConst0));
-		fConst8 = (2.0f * (1.0f - (1.0f / kpp_distruction_faustpower2_f(fConst7))));
-		fConst9 = tanf((314.159271f / fConst0));
+		fConst5 = (1.0f / tanf((3832.74292f / fConst0)));
+		fConst6 = (fConst5 + 1.0f);
+		fConst7 = (0.0f - ((1.0f - fConst5) / fConst6));
+		fConst8 = (1.0f / fConst6);
+		fConst9 = tanf((10367.2559f / fConst0));
 		fConst10 = (2.0f * (1.0f - (1.0f / kpp_distruction_faustpower2_f(fConst9))));
-		fConst11 = (1.0f / tanf((1005.30963f / fConst0)));
-		fConst12 = (fConst11 + 1.0f);
-		fConst13 = (0.0f - ((1.0f - fConst11) / fConst12));
-		fConst14 = (1.0f / fConst12);
-		fConst15 = (1.0f / tanf((4712.38916f / fConst0)));
+		fConst11 = tanf((2199.11475f / fConst0));
+		fConst12 = (2.0f * (1.0f - (1.0f / kpp_distruction_faustpower2_f(fConst11))));
+		fConst13 = tanf((314.159271f / fConst0));
+		fConst14 = (2.0f * (1.0f - (1.0f / kpp_distruction_faustpower2_f(fConst13))));
+		fConst15 = (1.0f / tanf((2261.94678f / fConst0)));
 		fConst16 = (fConst15 + 1.0f);
 		fConst17 = (0.0f - ((1.0f - fConst15) / fConst16));
 		fConst18 = (1.0f / fConst16);
-		fConst19 = (0.0f - fConst1);
-		fConst20 = (0.0f - fConst11);
-		fConst21 = (1.0f / fConst9);
-		fConst22 = (1.0f / fConst0);
-		fConst23 = (628.318542f * (fConst22 / sinf((628.318542f * fConst22))));
-		fConst24 = (1.0f / fConst7);
-		fConst25 = (2199.11475f * (fConst22 / sinf((3141.59277f * fConst22))));
-		fConst26 = (1.0f / fConst5);
-		fConst27 = (9424.77832f * (fConst22 / sinf((50265.4844f * fConst22))));
+		fConst19 = (1.0f / tanf((3769.91113f / fConst0)));
+		fConst20 = (fConst19 + 1.0f);
+		fConst21 = (0.0f - ((1.0f - fConst19) / fConst20));
+		fConst22 = (1.0f / fConst20);
+		fConst23 = (0.0f - fConst15);
+		fConst24 = (1.0f / fConst13);
+		fConst25 = (1.0f / fConst0);
+		fConst26 = (628.318542f * (fConst25 / sinf((628.318542f * fConst25))));
+		fConst27 = (1.0f / fConst11);
+		fConst28 = (2199.11475f * (fConst25 / sinf((4398.22949f * fConst25))));
+		fConst29 = (1.0f / fConst9);
+		fConst30 = (6283.18555f * (fConst25 / sinf((20734.5117f * fConst25))));
+		fConst31 = (0.0f - fConst1);
 		
 	}
 	
@@ -791,7 +799,7 @@ class kpp_distruction : public dsp {
 			fRec6[l4] = 0.0f;
 			
 		}
-		for (int l5 = 0; (l5 < 2); l5 = (l5 + 1)) {
+		for (int l5 = 0; (l5 < 3); l5 = (l5 + 1)) {
 			fRec5[l5] = 0.0f;
 			
 		}
@@ -803,12 +811,12 @@ class kpp_distruction : public dsp {
 			fRec3[l7] = 0.0f;
 			
 		}
-		for (int l8 = 0; (l8 < 3); l8 = (l8 + 1)) {
-			fRec2[l8] = 0.0f;
+		for (int l8 = 0; (l8 < 2); l8 = (l8 + 1)) {
+			fVec2[l8] = 0.0f;
 			
 		}
 		for (int l9 = 0; (l9 < 2); l9 = (l9 + 1)) {
-			fVec2[l9] = 0.0f;
+			fRec2[l9] = 0.0f;
 			
 		}
 		for (int l10 = 0; (l10 < 2); l10 = (l10 + 1)) {
@@ -863,7 +871,7 @@ class kpp_distruction : public dsp {
 		FAUSTFLOAT* output0 = outputs[0];
 		FAUSTFLOAT* output1 = outputs[1];
 		int iSlow0 = int(float(fCheckbox0));
-		float fSlow1 = (0.00666666683f * (powf(10.0f, (1.5f * float(fVslider0))) + -1.0f));
+		float fSlow1 = (0.00999999978f * (powf(10.0f, (0.75f * float(fVslider0))) + -1.0f));
 		float fSlow2 = float(fVslider1);
 		float fSlow3 = (powf(10.0f, (0.0299999993f * float(fVslider2))) + -1.0f);
 		float fSlow4 = (5.0f * fSlow3);
@@ -871,31 +879,31 @@ class kpp_distruction : public dsp {
 		float fSlow6 = (1.0f - fSlow2);
 		float fSlow7 = float(fVslider3);
 		int iSlow8 = (fSlow7 > 0.0f);
-		float fSlow9 = (fConst23 * powf(10.0f, (0.0500000007f * fabsf(fSlow7))));
-		float fSlow10 = (iSlow8?fConst23:fSlow9);
-		float fSlow11 = ((fConst21 * (fConst21 - fSlow10)) + 1.0f);
-		float fSlow12 = ((fConst21 * (fConst21 + fSlow10)) + 1.0f);
-		float fSlow13 = (iSlow8?fSlow9:fConst23);
-		float fSlow14 = ((fConst21 * (fConst21 + fSlow13)) + 1.0f);
-		float fSlow15 = (1.0f - (fConst21 * (fSlow13 - fConst21)));
-		float fSlow16 = (float(fVslider4) + -10.0f);
+		float fSlow9 = (fConst26 * powf(10.0f, (0.0500000007f * fabsf(fSlow7))));
+		float fSlow10 = (iSlow8?fConst26:fSlow9);
+		float fSlow11 = ((fConst24 * (fConst24 - fSlow10)) + 1.0f);
+		float fSlow12 = ((fConst24 * (fConst24 + fSlow10)) + 1.0f);
+		float fSlow13 = (iSlow8?fSlow9:fConst26);
+		float fSlow14 = ((fConst24 * (fConst24 + fSlow13)) + 1.0f);
+		float fSlow15 = (1.0f - (fConst24 * (fSlow13 - fConst24)));
+		float fSlow16 = (float(fVslider4) + -6.0f);
 		int iSlow17 = (fSlow16 > 0.0f);
-		float fSlow18 = (fConst25 * powf(10.0f, (0.0500000007f * fabsf(fSlow16))));
-		float fSlow19 = (iSlow17?fConst25:fSlow18);
-		float fSlow20 = ((fConst24 * (fConst24 - fSlow19)) + 1.0f);
-		float fSlow21 = ((fConst24 * (fConst24 + fSlow19)) + 1.0f);
-		float fSlow22 = (iSlow17?fSlow18:fConst25);
-		float fSlow23 = ((fConst24 * (fConst24 + fSlow22)) + 1.0f);
-		float fSlow24 = (1.0f - (fConst24 * (fSlow22 - fConst24)));
+		float fSlow18 = (fConst28 * powf(10.0f, (0.0500000007f * fabsf(fSlow16))));
+		float fSlow19 = (iSlow17?fConst28:fSlow18);
+		float fSlow20 = ((fConst27 * (fConst27 - fSlow19)) + 1.0f);
+		float fSlow21 = ((fConst27 * (fConst27 + fSlow19)) + 1.0f);
+		float fSlow22 = (iSlow17?fSlow18:fConst28);
+		float fSlow23 = ((fConst27 * (fConst27 + fSlow22)) + 1.0f);
+		float fSlow24 = (1.0f - (fConst27 * (fSlow22 - fConst27)));
 		float fSlow25 = float(fVslider5);
 		int iSlow26 = (fSlow25 > 0.0f);
-		float fSlow27 = (fConst27 * powf(10.0f, (0.0500000007f * fabsf(fSlow25))));
-		float fSlow28 = (iSlow26?fConst27:fSlow27);
-		float fSlow29 = ((fConst26 * (fConst26 - fSlow28)) + 1.0f);
-		float fSlow30 = ((fConst26 * (fConst26 + fSlow28)) + 1.0f);
-		float fSlow31 = (iSlow26?fSlow27:fConst27);
-		float fSlow32 = ((fConst26 * (fConst26 + fSlow31)) + 1.0f);
-		float fSlow33 = (1.0f - (fConst26 * (fSlow31 - fConst26)));
+		float fSlow27 = (fConst30 * powf(10.0f, (0.0500000007f * fabsf(fSlow25))));
+		float fSlow28 = (iSlow26?fConst30:fSlow27);
+		float fSlow29 = ((fConst29 * (fConst29 - fSlow28)) + 1.0f);
+		float fSlow30 = ((fConst29 * (fConst29 + fSlow28)) + 1.0f);
+		float fSlow31 = (iSlow26?fSlow27:fConst30);
+		float fSlow32 = ((fConst29 * (fConst29 + fSlow31)) + 1.0f);
+		float fSlow33 = (1.0f - (fConst29 * (fSlow31 - fConst29)));
 		for (int i = 0; (i < count); i = (i + 1)) {
 			float fTemp0 = (float(input0[i]) + float(input1[i]));
 			float fTemp1 = (iSlow0?0.0f:fTemp0);
@@ -903,21 +911,21 @@ class kpp_distruction : public dsp {
 			fRec8[0] = (((0.995000005f * fRec8[1]) + fTemp1) - fVec0[1]);
 			float fTemp2 = max(-2.0f, min(2.0f, fRec8[0]));
 			fVec1[0] = (fSlow4 * fTemp2);
-			fRec7[0] = ((fConst17 * fRec7[1]) + (fConst18 * (fVec1[1] + (fSlow5 * fTemp2))));
-			fRec6[0] = ((fConst3 * fRec6[1]) + (fConst4 * ((fConst1 * fRec7[0]) + (fConst19 * fRec7[1]))));
-			fRec5[0] = ((fConst13 * fRec5[1]) + (fConst14 * ((fConst11 * fRec6[0]) + (fConst20 * fRec6[1]))));
-			float fTemp3 = ((fSlow2 * fRec5[0]) + (fSlow6 * fRec7[0]));
+			fRec7[0] = ((fConst21 * fRec7[1]) + (fConst22 * (fVec1[1] + (fSlow5 * fTemp2))));
+			fRec6[0] = ((fConst17 * fRec6[1]) + (fConst18 * ((fConst15 * fRec7[0]) + (fConst23 * fRec7[1]))));
+			float fTemp3 = ((fSlow2 * fRec6[0]) + (fSlow6 * fRec7[0]));
 			float fTemp4 = (max((fTemp3 + -0.200000003f), 0.0f) + 1.0f);
 			float fTemp5 = (max((-0.200000003f - fTemp3), 0.0f) + 1.0f);
-			float fTemp6 = (fConst10 * fRec4[1]);
-			fRec4[0] = (max(0.0f, ((fTemp3 / fTemp4) + (0.200000003f * ((1.0f - (1.0f / fTemp4)) + 1.0f)))) - (max(0.0f, (((0.0f - fTemp3) / fTemp5) + (0.200000003f * ((1.0f - (1.0f / fTemp5)) + 1.0f)))) + (((fRec4[2] * fSlow11) + fTemp6) / fSlow12)));
-			float fTemp7 = (fConst8 * fRec3[1]);
-			fRec3[0] = ((((fTemp6 + (fRec4[0] * fSlow14)) + (fRec4[2] * fSlow15)) / fSlow12) - (((fRec3[2] * fSlow20) + fTemp7) / fSlow21));
-			float fTemp8 = (fConst6 * fRec2[1]);
-			fRec2[0] = ((((fTemp7 + (fRec3[0] * fSlow23)) + (fRec3[2] * fSlow24)) / fSlow21) - (((fRec2[2] * fSlow29) + fTemp8) / fSlow30));
-			float fTemp9 = (((fTemp8 + (fRec2[0] * fSlow32)) + (fRec2[2] * fSlow33)) / fSlow30);
+			float fTemp6 = (fConst14 * fRec5[1]);
+			fRec5[0] = (max(0.0f, ((fTemp3 / fTemp4) + (0.200000003f * ((1.0f - (1.0f / fTemp4)) + 1.0f)))) - (max(0.0f, (((0.0f - fTemp3) / fTemp5) + (0.200000003f * ((1.0f - (1.0f / fTemp5)) + 1.0f)))) + (((fRec5[2] * fSlow11) + fTemp6) / fSlow12)));
+			float fTemp7 = (fConst12 * fRec4[1]);
+			fRec4[0] = ((((fTemp6 + (fRec5[0] * fSlow14)) + (fRec5[2] * fSlow15)) / fSlow12) - (((fRec4[2] * fSlow20) + fTemp7) / fSlow21));
+			float fTemp8 = (fConst10 * fRec3[1]);
+			fRec3[0] = ((((fTemp7 + (fRec4[0] * fSlow23)) + (fRec4[2] * fSlow24)) / fSlow21) - (((fRec3[2] * fSlow29) + fTemp8) / fSlow30));
+			float fTemp9 = (((fTemp8 + (fRec3[0] * fSlow32)) + (fRec3[2] * fSlow33)) / fSlow30);
 			fVec2[0] = fTemp9;
-			fRec1[0] = ((fConst3 * fRec1[1]) + (fConst4 * (fTemp9 + fVec2[1])));
+			fRec2[0] = ((fConst7 * fRec2[1]) + (fConst8 * (fTemp9 + fVec2[1])));
+			fRec1[0] = ((fConst3 * fRec1[1]) + (fConst4 * ((fConst1 * fRec2[0]) + (fConst31 * fRec2[1]))));
 			float fTemp10 = (fSlow1 * max(-2.0f, min(2.0f, fRec1[0])));
 			fVec3[0] = fTemp10;
 			fRec0[0] = (((0.995000005f * fRec0[1]) + fTemp10) - fVec3[1]);
@@ -929,14 +937,14 @@ class kpp_distruction : public dsp {
 			fVec1[1] = fVec1[0];
 			fRec7[1] = fRec7[0];
 			fRec6[1] = fRec6[0];
+			fRec5[2] = fRec5[1];
 			fRec5[1] = fRec5[0];
 			fRec4[2] = fRec4[1];
 			fRec4[1] = fRec4[0];
 			fRec3[2] = fRec3[1];
 			fRec3[1] = fRec3[0];
-			fRec2[2] = fRec2[1];
-			fRec2[1] = fRec2[0];
 			fVec2[1] = fVec2[0];
+			fRec2[1] = fRec2[0];
 			fRec1[1] = fRec1[0];
 			fVec3[1] = fVec3[0];
 			fRec0[1] = fRec0[0];

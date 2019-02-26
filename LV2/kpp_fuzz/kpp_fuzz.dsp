@@ -35,7 +35,7 @@
 declare name "kpp_fuzz";
 declare author "Oleg Kapitonov";
 declare license "GPLv3";
-declare version "1.0RC1";
+declare version "1.0";
 
 import("stdfaust.lib"); 
 
@@ -54,7 +54,7 @@ process = output with {
     pre_filter = fi.dcblocker : fi.lowpass(1, 1720.0);
     
     distortion = *(ba.db2linear(fuzz/10)) : +(0.5) : max(0.0) : min(1.0) 
-    : fi.highpass(1, 220) : +(0.5)
+    : fi.highpass(1, 120) : +(0.5)
     <: _,_ : * : -(0.4) : *(ba.db2linear(fuzz/5)) : max(-1.0) : min(1.0) : +(0.15);
 
       

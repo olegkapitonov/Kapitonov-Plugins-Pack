@@ -35,15 +35,12 @@
 declare name "kpp_fuzz";
 declare author "Oleg Kapitonov";
 declare license "GPLv3";
-declare version "1.0RC1";
+declare version "1.0";
 
 import("stdfaust.lib"); 
 
 process = output with {
     
-    // Bypass button, 0 - pedal on, 1 -pedal off (bypass on)
-    bypass = checkbox("99_bypass");
-          
     fuzz = vslider("fuzz",0,0,100,0.01);
     tone = vslider("tone",0,-15,0,0.1);
     volume = vslider("volume",0.5,0,1,0.001);
@@ -54,7 +51,7 @@ process = output with {
     pre_filter = fi.dcblocker : fi.lowpass(1, 1720.0);
     
     distortion = *(ba.db2linear(fuzz/10)) : +(0.5) : max(0.0) : min(1.0) 
-    : fi.highpass(1, 220) : +(0.5)
+    : fi.highpass(1, 120) : +(0.5)
     <: _,_ : * : -(0.4) : *(ba.db2linear(fuzz/5)) : max(-1.0) : min(1.0) : +(0.15);
 
       

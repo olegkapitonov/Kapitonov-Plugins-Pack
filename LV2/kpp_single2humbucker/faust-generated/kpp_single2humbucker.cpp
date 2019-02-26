@@ -2,7 +2,7 @@
 author: "Oleg Kapitonov"
 license: "GPLv3"
 name: "kpp_single2humbucker"
-version: "0.9b"
+version: "1.0"
 Code generated with Faust 2.5.23 (https://faust.grame.fr)
 Compilation options: cpp, -scal -ftz 0
 ------------------------------------------------------------ */
@@ -657,7 +657,7 @@ class kpp_single2humbucker : public dsp {
 		m->declare("maths.lib/name", "Faust Math Library");
 		m->declare("maths.lib/version", "2.1");
 		m->declare("name", "kpp_single2humbucker");
-		m->declare("version", "0.9b");
+		m->declare("version", "1.0");
 	}
 
 	virtual int getNumInputs() {
@@ -744,7 +744,7 @@ class kpp_single2humbucker : public dsp {
 	
 	virtual void instanceResetUserInterface() {
 		fVslider0 = FAUSTFLOAT(20.0f);
-		fVslider1 = FAUSTFLOAT(0.0f);
+		fVslider1 = FAUSTFLOAT(1.0f);
 		
 	}
 	
@@ -798,7 +798,7 @@ class kpp_single2humbucker : public dsp {
 	virtual void buildUserInterface(UI* ui_interface) {
 		ui_interface->openVerticalBox("kpp_single2humbucker");
 		ui_interface->addVerticalSlider("Bass Cut", &fVslider0, 20.0f, 20.0f, 720.0f, 0.00100000005f);
-		ui_interface->addVerticalSlider("Humbuckerize", &fVslider1, 0.0f, 0.0f, 1.0f, 0.00100000005f);
+		ui_interface->addVerticalSlider("Humbuckerize", &fVslider1, 1.0f, 0.0f, 1.0f, 0.00100000005f);
 		ui_interface->closeBox();
 		
 	}

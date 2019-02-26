@@ -1,9 +1,7 @@
 Kapitonov Plugins Pack (KPP)
 ============================
 
-__WORK IN PROGRESS !!!__
-
-Last release is 1.0 Release Candidate 1.
+Last release is 1.0.
 
 > Set of plugins for guitar sound processing.
 > Compatible with hosts such as Ardour, Qtractor, Carla, 
@@ -100,7 +98,13 @@ and adjust the signal level.
 2. Launch host application (e. g. Ardour). Find desired plugin in library,
    names will have `kpp_` prefix.
 
+### Quick start guide
 
+[English](https://github.com/olegkapitonov/Kapitonov-Plugins-Pack/blob/master/guide.md)
+
+[Русский](https://github.com/olegkapitonov/Kapitonov-Plugins-Pack/blob/master/guide_ru.md)
+
+ 
 ## Development
 
 DSP code is written in Faust language. GUI and support code is written in C and C++

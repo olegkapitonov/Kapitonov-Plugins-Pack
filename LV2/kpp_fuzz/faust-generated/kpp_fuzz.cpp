@@ -2,7 +2,7 @@
 author: "Oleg Kapitonov"
 license: "GPLv3"
 name: "kpp_fuzz"
-version: "0.9b"
+version: "1.0"
 Code generated with Faust 2.5.23 (https://faust.grame.fr)
 Compilation options: cpp, -scal -ftz 0
 ------------------------------------------------------------ */
@@ -661,7 +661,7 @@ class kpp_fuzz : public dsp {
 		m->declare("maths.lib/name", "Faust Math Library");
 		m->declare("maths.lib/version", "2.1");
 		m->declare("name", "kpp_fuzz");
-		m->declare("version", "0.9b");
+		m->declare("version", "1.0");
 	}
 
 	virtual int getNumInputs() {
@@ -727,7 +727,7 @@ class kpp_fuzz : public dsp {
 		fConst5 = (fConst2 + 1.0f);
 		fConst6 = (0.0f - ((1.0f - fConst2) / fConst5));
 		fConst7 = (1.0f / fConst5);
-		fConst8 = (1.0f / tanf((691.150391f / fConst0)));
+		fConst8 = (1.0f / tanf((376.991119f / fConst0)));
 		fConst9 = (fConst8 + 1.0f);
 		fConst10 = (0.0f - ((1.0f - fConst8) / fConst9));
 		fConst11 = (1.0f / fConst9);
@@ -748,8 +748,8 @@ class kpp_fuzz : public dsp {
 	virtual void instanceResetUserInterface() {
 		fCheckbox0 = FAUSTFLOAT(0.0f);
 		fVslider0 = FAUSTFLOAT(0.5f);
-		fVslider1 = FAUSTFLOAT(0.0f);
-		fVslider2 = FAUSTFLOAT(0.0f);
+		fVslider1 = FAUSTFLOAT(50.0f);
+		fVslider2 = FAUSTFLOAT(-7.5f);
 		
 	}
 	
@@ -818,8 +818,8 @@ class kpp_fuzz : public dsp {
 	virtual void buildUserInterface(UI* ui_interface) {
 		ui_interface->openVerticalBox("kpp_fuzz");
 		ui_interface->addCheckButton("99_bypass", &fCheckbox0);
-		ui_interface->addVerticalSlider("fuzz", &fVslider1, 0.0f, 0.0f, 100.0f, 0.00999999978f);
-		ui_interface->addVerticalSlider("tone", &fVslider2, 0.0f, -15.0f, 0.0f, 0.100000001f);
+		ui_interface->addVerticalSlider("fuzz", &fVslider1, 50.0f, 0.0f, 100.0f, 0.00999999978f);
+		ui_interface->addVerticalSlider("tone", &fVslider2, -7.5f, -15.0f, 0.0f, 0.100000001f);
 		ui_interface->addVerticalSlider("volume", &fVslider0, 0.5f, 0.0f, 1.0f, 0.00100000005f);
 		ui_interface->closeBox();
 		

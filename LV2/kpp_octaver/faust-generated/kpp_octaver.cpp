@@ -2,7 +2,7 @@
 author: "Oleg Kapitonov"
 license: "GPLv3"
 name: "kpp_octaver"
-version: "0.9b"
+version: "1.0"
 Code generated with Faust 2.5.23 (https://faust.grame.fr)
 Compilation options: cpp, -scal -ftz 0
 ------------------------------------------------------------ */
@@ -698,7 +698,7 @@ class kpp_octaver : public dsp {
 		m->declare("maths.lib/name", "Faust Math Library");
 		m->declare("maths.lib/version", "2.1");
 		m->declare("name", "kpp_octaver");
-		m->declare("version", "0.9b");
+		m->declare("version", "1.0");
 	}
 
 	virtual int getNumInputs() {
@@ -803,7 +803,7 @@ class kpp_octaver : public dsp {
 	}
 	
 	virtual void instanceResetUserInterface() {
-		fVslider0 = FAUSTFLOAT(0.0f);
+		fVslider0 = FAUSTFLOAT(30.0f);
 		fCheckbox0 = FAUSTFLOAT(0.0f);
 		fVslider1 = FAUSTFLOAT(0.0f);
 		fVslider2 = FAUSTFLOAT(0.0f);
@@ -951,7 +951,7 @@ class kpp_octaver : public dsp {
 	virtual void buildUserInterface(UI* ui_interface) {
 		ui_interface->openVerticalBox("kpp_octaver");
 		ui_interface->addCheckButton("99_bypass", &fCheckbox0);
-		ui_interface->addVerticalSlider("dry", &fVslider0, 0.0f, 0.0f, 30.0f, 0.00999999978f);
+		ui_interface->addVerticalSlider("dry", &fVslider0, 30.0f, 0.0f, 30.0f, 0.00999999978f);
 		ui_interface->addVerticalSlider("octave1", &fVslider1, 0.0f, 0.0f, 30.0f, 0.00999999978f);
 		ui_interface->addVerticalSlider("octave2", &fVslider2, 0.0f, 0.0f, 30.0f, 0.00999999978f);
 		ui_interface->closeBox();

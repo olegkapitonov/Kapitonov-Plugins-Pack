@@ -2,7 +2,7 @@
 author: "Oleg Kapitonov"
 license: "GPLv3"
 name: "kpp_deadgate"
-version: "0.1b"
+version: "1.0"
 Code generated with Faust 2.5.23 (https://faust.grame.fr)
 Compilation options: cpp, -scal -ftz 0
 ------------------------------------------------------------ */
@@ -803,7 +803,7 @@ class kpp_deadgate : public dsp {
 		m->declare("name", "kpp_deadgate");
 		m->declare("signals.lib/name", "Faust Signal Routing Library");
 		m->declare("signals.lib/version", "0.0");
-		m->declare("version", "0.1b");
+		m->declare("version", "1.0");
 	}
 
 	virtual int getNumInputs() {

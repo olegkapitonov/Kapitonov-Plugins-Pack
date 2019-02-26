@@ -25,8 +25,7 @@
  * input->pre_filter->*drive_knob->distortion->equalizer->post-filter->*volume_knob->output
  *
  *  pre-filter - highpass, 1 order, 720 Hz,
- *  highpass, 1 order, 320 Hz,
- *  lowpass, 1 order, 1500 Hz
+ *  lowpass, 1 order, 1200 Hz
  * 
  *  Voice knob disables pre-filter in left position.
  *
@@ -34,13 +33,14 @@
  *  
  *  equalizer - tonestack, bass-middle-treble.
  *
- *  post-filter - lowpass, 1 order, 720 Hz.
+ *  post-filter - lowpass, 1 order, 1220 Hz,
+ *                highpass, 1 order, 70 Hz
  */
 
 declare name "kpp_distruction";
 declare author "Oleg Kapitonov";
 declare license "GPLv3";
-declare version "1.0RC1";
+declare version "1.0";
 
 import("stdfaust.lib"); 
 
@@ -58,12 +58,12 @@ process = output with {
     tonestack_high = vslider("treble",0,-15,15,0.1);
     
     tonestack_low_freq = 100;
-    tonestack_middle_freq = 500;
-    tonestack_high_freq = 8000;
+    tonestack_middle_freq = 700;
+    tonestack_high_freq = 3300;
     
     tonestack_low_band = 200;
     tonestack_middle_band = 700;
-    tonestack_high_band = 3000;
+    tonestack_high_band = 2000;
     
     clamp = min(2.0) : max(-2.0);
     
@@ -74,8 +74,11 @@ process = output with {
     bias = 0.2;
 
     
-    pre_filter = fi.lowpass(1,1500) <: (fi.highpass(1, 720) : fi.highpass(1, 320)),_ :
+    pre_filter = fi.lowpass(1, 1200) <:
+    fi.highpass(1, 720),_ :
     *(voice),*(1 - voice) : +;
+    
+    post_filter = fi.lowpass(1, 1220) : fi.highpass(1,70);
     
     // Softness of distortion
     Kreg = 1.0;
@@ -90,13 +93,13 @@ process = output with {
     stage_stomp = pre_filter : _<: 
     _,*(-1.0) : tube(Kreg,Upor,bias,0), tube(Kreg,Upor,bias,0) : - :
     fi.peak_eq(tonestack_low,tonestack_low_freq,tonestack_low_band) :
-    fi.peak_eq(tonestack_middle - 10.0,tonestack_middle_freq,tonestack_middle_band) : 
+    fi.peak_eq(tonestack_middle - 6,tonestack_middle_freq,tonestack_middle_band) : 
     fi.peak_eq(tonestack_high,tonestack_high_freq,tonestack_high_band) :
-    fi.lowpass(1,720) :
+    post_filter :
     clamp;
     
     stomp = fi.dcblocker : clamp : *(ba.db2linear(drive * 60.0 / 100.0)-1) :
-    *(5) : stage_stomp : *((ba.db2linear(volume * 30.0)-1) / 100.0) : /(1.5) : fi.dcblocker;
+    *(5) : stage_stomp : *((ba.db2linear(volume * 15.0)-1) / 100.0) : fi.dcblocker;
     
     output = _,_ : + : ba.bypass1(bypass, stomp) <: _,_;
     
