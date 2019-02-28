@@ -2,7 +2,7 @@
 	user = $(shell whoami)
 	ifeq ($(user),root)
 	INSTALL_LV2_DIR = /usr/lib/lv2
-	INSTALL_LADSPA_DIR = /usr/lib/lv2
+	INSTALL_LADSPA_DIR = /usr/lib/ladspa
 	else 
 	INSTALL_LV2_DIR = ~/.lv2
 	INSTALL_LADSPA_DIR = ~/.ladspa
