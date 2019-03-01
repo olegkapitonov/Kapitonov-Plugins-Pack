@@ -43,7 +43,7 @@ faust:
 
 clean :
 	@rm -f ./$(BUNDLE)/$(NAME).so
-	@rm -f ./$(BUNDLE)/$(NAME)ui.so
+	@rm -f ./$(BUNDLE)/$(NAME)_ui.so
 	@echo $(BLUE)"clean up"$(NONE)
 
 install :

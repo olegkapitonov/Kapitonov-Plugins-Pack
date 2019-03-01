@@ -49,8 +49,8 @@ faust:
 
 clean :
 	@rm -f ./$(BUNDLE)/$(NAME).so
-	@rm -f ./$(BUNDLE)/$(NAME)ui.so
-	@rm -f ../../LADSPA/$(NAME)/$(NAME).su
+	@rm -f ./$(BUNDLE)/$(NAME)_ui.so
+	@rm -f ../../LADSPA/$(NAME)/$(NAME).so
 	@echo $(BLUE)"clean up"$(NONE)
 
 install :
@@ -73,7 +73,7 @@ uninstall :
 
 gui : 
 	$(CXX) $(CXXFLAGS) $(OBJECTS) $(LDFLAGS) -o $(NAME).so
-	$(CXX) $(CXXFLAGS) $(GUI_OBJECTS) $(GUI_LDFLAGS) -o $(NAME)_ui.so
+	$(CXX) $(CXXFLAGS) $(GUI_OBJECTS) $(GUI_LDFLAGS) -o $(NAME)ui.so
 
 nogui :
 	$(CXX) $(CXXFLAGS) $(OBJECTS) $(LDFLAGS) -o $(NAME).so
