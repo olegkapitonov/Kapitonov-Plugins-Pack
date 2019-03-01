@@ -9,7 +9,8 @@ Configure the session settings as shown.
 Note the Sample rate and Buffer size parameters.
 Sample rate can be any value, 96 kHz is recommended.
 If the load on your processor is too high, select
-48 kHz. It is not recommended to use 44.1 kHz, but allowed if necessary.
+48 kHz. I recommend using 48 kHz or 96 kHz for best quality
+(to avoid lossy IR resampling). 44.1 kHz will work good (but not best).
 
 ![Screenshot](guide_img/guide01.png)
 
@@ -43,6 +44,7 @@ tone. It only changes the volume. Cabinet % allows you to smoothly
 disable cabinet emulation.
 
 To select profile click it name and select *.tapf file in the dialog.
+If dialog does not appear, install Zenity application!
 
 ![Screenshot](guide_img/guide06.png)
 
