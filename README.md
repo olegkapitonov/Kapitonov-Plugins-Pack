@@ -64,7 +64,8 @@ and adjust the signal level.
    or guitarix with LADPSA versions.
    VST versions for Windows are planned for the future.
 2. Cairo library for GUI.
-3. fftw3 library.
+3. Zenity for File Select dialog (for profile changing in tubeAmp).
+4. fftw3 library.
 
 ### Dependencies for building
 
@@ -78,6 +79,8 @@ and adjust the signal level.
 
 ### How to build and install
 
+For 1.0 release version:
+
 1. Each plugin sorce code folder contains `build.sh` shell script.
    Run it.
 2. LV2 plugin bundle will be in `plugin_name.lv2` folder inside
@@ -87,6 +90,16 @@ and adjust the signal level.
    which is in the plugins PATH for your host application. Usually it is
    `/usr/lib/lv2` for LV2 plugins and `/usr/lib/ladspa` for LADSPA plugins.
 4. Launch host application (e. g. Ardour). Find desired plugin 
+   in the library. Names will have `kpp_` prefix.
+ 
+For the version from master branch (thanks to [brummer10](https://github.com/brummer10)):
+
+1. Run 'make' command.
+   Default build, aka 'make' build the LV2 plugins, 'make LADSPA' build the ladspa plugins, 'make LV2 LADSPA' build both versions. 'make faust' regenerate the faust generated *-cpp files.
+2. Run 'make install' command.
+   Plugins will be installed to ~/.ladspa and ~/.lv2 if the command was run from user
+   or to /usr/lib/ladspa and /usr/lib/lv2 if the command was run from root.
+3. Launch host application (e. g. Ardour). Find desired plugin 
    in the library. Names will have `kpp_` prefix.
 
 
