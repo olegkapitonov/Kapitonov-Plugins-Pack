@@ -64,7 +64,9 @@ class mydsp : public dsp {
 	float fRec0[2];
 	
  public:
-	
+
+  stPorts ports;
+
 	void metadata(Meta* m) { 
 		m->declare("author", "Oleg Kapitonov");
 		m->declare("basics.lib/name", "Faust Basic Element Library");

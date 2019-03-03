@@ -39,11 +39,12 @@ LV2 : all
 faust:
 	@echo $(BLUE)"regenerate from faust dsp file"$(NONE)
 	@faust kpp_tubeamp.dsp >faust-generated/$(NAME)_dsp.cpp
+	@cd faust-generated; patch < stPorts.patch
 	@echo ". ." $(BLUE)", done"$(NONE)
 
 clean :
 	@rm -f ./$(BUNDLE)/$(NAME).so
-	@rm -f ./$(BUNDLE)/$(NAME)_ui.so
+	@rm -f ./$(BUNDLE)/$(NAME)ui.so
 	@echo $(BLUE)"clean up"$(NONE)
 
 install :

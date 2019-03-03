@@ -604,14 +604,13 @@ class kpp_octaver : public dsp {
 	
  private:
 	
-	FAUSTFLOAT fVslider0;
 	FAUSTFLOAT fCheckbox0;
 	int fSamplingFreq;
 	float fConst0;
 	float fConst1;
 	float fConst2;
 	float fConst3;
-	FAUSTFLOAT fVslider1;
+	FAUSTFLOAT fVslider0;
 	float fConst4;
 	float fConst5;
 	float fConst6;
@@ -660,7 +659,7 @@ class kpp_octaver : public dsp {
 	float fConst35;
 	float fConst36;
 	float fConst37;
-	FAUSTFLOAT fVslider2;
+	FAUSTFLOAT fVslider1;
 	float fConst38;
 	float fConst39;
 	float fConst40;
@@ -681,6 +680,7 @@ class kpp_octaver : public dsp {
 	float fRec12[3];
 	float fVec5[2];
 	float fRec0[2];
+	FAUSTFLOAT fVslider2;
 	
  public:
 	
@@ -803,10 +803,10 @@ class kpp_octaver : public dsp {
 	}
 	
 	virtual void instanceResetUserInterface() {
-		fVslider0 = FAUSTFLOAT(30.0f);
 		fCheckbox0 = FAUSTFLOAT(0.0f);
+		fVslider0 = FAUSTFLOAT(0.0f);
 		fVslider1 = FAUSTFLOAT(0.0f);
-		fVslider2 = FAUSTFLOAT(0.0f);
+		fVslider2 = FAUSTFLOAT(30.0f);
 		
 	}
 	
@@ -951,9 +951,9 @@ class kpp_octaver : public dsp {
 	virtual void buildUserInterface(UI* ui_interface) {
 		ui_interface->openVerticalBox("kpp_octaver");
 		ui_interface->addCheckButton("99_bypass", &fCheckbox0);
-		ui_interface->addVerticalSlider("dry", &fVslider0, 30.0f, 0.0f, 30.0f, 0.00999999978f);
-		ui_interface->addVerticalSlider("octave1", &fVslider1, 0.0f, 0.0f, 30.0f, 0.00999999978f);
-		ui_interface->addVerticalSlider("octave2", &fVslider2, 0.0f, 0.0f, 30.0f, 0.00999999978f);
+		ui_interface->addVerticalSlider("dry", &fVslider2, 30.0f, 0.0f, 30.0f, 0.00999999978f);
+		ui_interface->addVerticalSlider("octave1", &fVslider0, 0.0f, 0.0f, 30.0f, 0.00999999978f);
+		ui_interface->addVerticalSlider("octave2", &fVslider1, 0.0f, 0.0f, 30.0f, 0.00999999978f);
 		ui_interface->closeBox();
 		
 	}
@@ -963,15 +963,15 @@ class kpp_octaver : public dsp {
 		FAUSTFLOAT* input1 = inputs[1];
 		FAUSTFLOAT* output0 = outputs[0];
 		FAUSTFLOAT* output1 = outputs[1];
-		float fSlow0 = powf(10.0f, (0.0500000007f * (float(fVslider0) + -30.0f)));
-		int iSlow1 = int(float(fCheckbox0));
-		float fSlow2 = (fConst3 * powf(10.0f, (0.0500000007f * (float(fVslider1) + -20.0f))));
-		float fSlow3 = (fConst37 * powf(10.0f, (0.0500000007f * (float(fVslider2) + -20.0f))));
+		int iSlow0 = int(float(fCheckbox0));
+		float fSlow1 = (fConst3 * powf(10.0f, (0.0500000007f * (float(fVslider0) + -20.0f))));
+		float fSlow2 = (fConst37 * powf(10.0f, (0.0500000007f * (float(fVslider1) + -20.0f))));
+		float fSlow3 = powf(10.0f, (0.0500000007f * (float(fVslider2) + -30.0f)));
 		for (int i = 0; (i < count); i = (i + 1)) {
-			float fTemp0 = (float(input1[i]) + float(input0[i]));
-			float fTemp1 = (iSlow1?0.0f:fTemp0);
+			float fTemp0 = (float(input0[i]) + float(input1[i]));
+			float fTemp1 = (iSlow0?0.0f:fTemp0);
 			fVec0[0] = fTemp1;
-			fRec11[0] = ((fTemp1 + (0.995000005f * fRec11[1])) - fVec0[1]);
+			fRec11[0] = (((0.995000005f * fRec11[1]) + fTemp1) - fVec0[1]);
 			fRec10[0] = ((fConst22 * fRec10[1]) + (fConst23 * (fRec11[0] + fRec11[1])));
 			fRec9[0] = (fRec10[0] - (fConst20 * ((fConst24 * fRec9[2]) + (fConst25 * fRec9[1]))));
 			fRec8[0] = ((fConst20 * (fRec9[2] + (fRec9[0] + (2.0f * fRec9[1])))) - (fConst26 * ((fConst27 * fRec8[2]) + (fConst25 * fRec8[1]))));
@@ -1006,10 +1006,10 @@ class kpp_octaver : public dsp {
 			fVec4[0] = fTemp10;
 			fRec13[0] = ((fConst39 * fRec13[1]) + (fConst40 * (fTemp10 + fVec4[1])));
 			fRec12[0] = (fRec13[0] - (fConst37 * ((fConst41 * fRec12[2]) + (fConst42 * fRec12[1]))));
-			float fTemp11 = ((fSlow2 * (fRec1[2] + (fRec1[0] + (2.0f * fRec1[1])))) + (fSlow3 * (fRec12[2] + (fRec12[0] + (2.0f * fRec12[1])))));
+			float fTemp11 = ((fSlow1 * (fRec1[2] + (fRec1[0] + (2.0f * fRec1[1])))) + (fSlow2 * (fRec12[2] + (fRec12[0] + (2.0f * fRec12[1])))));
 			fVec5[0] = fTemp11;
 			fRec0[0] = ((0.995000005f * fRec0[1]) + (2.0f * (fTemp11 - fVec5[1])));
-			float fTemp12 = ((fSlow0 * fTemp0) + (iSlow1?fTemp0:fRec0[0]));
+			float fTemp12 = ((iSlow0?fTemp0:fRec0[0]) + (fSlow3 * fTemp0));
 			output0[i] = FAUSTFLOAT(fTemp12);
 			output1[i] = FAUSTFLOAT(fTemp12);
 			fVec0[1] = fVec0[0];

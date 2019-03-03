@@ -47,6 +47,12 @@ struct stPlugin {
   float *preamp_inp_buf;  // Buffers for preamp convolver
   float *preamp_outp_buf;
   
+  Convproc *convproc;
+  Convproc *preamp_convproc;
+
+  Convproc *new_convproc;
+  Convproc *new_preamp_convproc;
+
   stPlugin(const int sr)
   {
     dsp = new mydsp();
@@ -113,7 +119,6 @@ struct stPlugin {
       
       return;
     }
-    
     // Preamp convolver
     for (int i=0; i<blocksz; i++)
     {
@@ -127,11 +132,11 @@ struct stPlugin {
       
     while (bufp < blocksz)
     {
-      memcpy (profile_and_convolvers->preamp_convproc->inpdata(0), preamp_inp_buf+bufp, fragm * sizeof(float));
+      memcpy (preamp_convproc->inpdata(0), preamp_inp_buf+bufp, fragm * sizeof(float));
             
-      profile_and_convolvers->preamp_convproc->process (true);
+      preamp_convproc->process (true);
         
-      memcpy (preamp_outp_buf+bufp, profile_and_convolvers->preamp_convproc->outdata(0), fragm * sizeof(float));
+      memcpy (preamp_outp_buf+bufp, preamp_convproc->outdata(0), fragm * sizeof(float));
         
       bufp += fragm;
     }
@@ -150,41 +155,40 @@ struct stPlugin {
 
     memcpy (drybuf_l, outputs[0], blocksz * sizeof(float));
     memcpy (drybuf_r, outputs[1], blocksz * sizeof(float));
-        
+
     while (bufp < blocksz)
     {
-      memcpy (profile_and_convolvers->convproc->inpdata(0), outputs[0]+bufp, fragm * sizeof(float));
-      memcpy (profile_and_convolvers->convproc->inpdata(1), outputs[1]+bufp, fragm * sizeof(float));
+      memcpy (convproc->inpdata(0), outputs[0]+bufp, fragm * sizeof(float));
+      memcpy (convproc->inpdata(1), outputs[1]+bufp, fragm * sizeof(float));
               
-      profile_and_convolvers->convproc->process (true);
-      memcpy (outputs[0]+bufp, profile_and_convolvers->convproc->outdata(0), fragm * sizeof(float));
-      memcpy (outputs[1]+bufp, profile_and_convolvers->convproc->outdata(1), fragm * sizeof(float));
+      convproc->process (true);
+      memcpy (outputs[0]+bufp, convproc->outdata(0), fragm * sizeof(float));
+      memcpy (outputs[1]+bufp, convproc->outdata(1), fragm * sizeof(float));
         
       bufp += fragm;
     }
-        
+
     // Mix convolver output with bypassed signal
     for (int i=0;i<blocksz;i++)
     {
-      outputs[0][i] = outputs[0][i]*(*ports.cabinet)+drybuf_l[i]*(1.0-*ports.cabinet); 
-      outputs[1][i] = outputs[1][i]*(*ports.cabinet)+drybuf_r[i]*(1.0-*ports.cabinet); 
+      outputs[0][i] = outputs[0][i]*(*dsp->ports.cabinet)+drybuf_l[i]*(1.0-*dsp->ports.cabinet); 
+      outputs[1][i] = outputs[1][i]*(*dsp->ports.cabinet)+drybuf_r[i]*(1.0-*dsp->ports.cabinet); 
     }
   }
    
   // Function loads profile from file at 'path'
   // and creates new convolvers
   // with IR data from that *.tapf file
-  void load_profile(const char *path, char *plugin_profile_file, int rate, stProfileAndConvolvers **p_profile)
+  void load_profile(const char *path, char *plugin_profile_file, int rate, st_profile **p_profile, bool is_profile_change)
   {
-    (*p_profile) = new stProfileAndConvolvers;
-    (*p_profile)->profile = new st_profile;
+    (*p_profile) = new st_profile;
    
     FILE * profile_file= fopen(path, "rb");
     if (profile_file != NULL) 
     {
       strcpy(plugin_profile_file, path);
       
-      if (fread((*p_profile)->profile, sizeof(st_profile), 1, profile_file) == 1)
+      if (fread((*p_profile), sizeof(st_profile), 1, profile_file) == 1)
       {
         float *preamp_temp_buffer;
         float *preamp_impulse;
@@ -341,22 +345,38 @@ struct stPlugin {
                 
         }
         
+        Convproc *p_preamp_convproc = NULL;
+        Convproc *p_convproc = NULL;
+
         // Create preamp convolver
-        (*p_profile)->preamp_convproc = new Convproc;
-        (*p_profile)->preamp_convproc->configure (1, 1, preamp_impheader.sample_count*ratio, fragm, fragm, Convproc::MAXPART, 0.0);
-        (*p_profile)->preamp_convproc->impdata_create (0, 0, 1, preamp_impulse,
+        p_preamp_convproc = new Convproc;
+        p_preamp_convproc->configure (1, 1, preamp_impheader.sample_count*ratio,
+                                      fragm, fragm, Convproc::MAXPART, 0.0);
+        p_preamp_convproc->impdata_create (0, 0, 1, preamp_impulse,
                                       0, preamp_impheader.sample_count*ratio);
         
-        (*p_profile)->preamp_convproc->start_process(CONVPROC_SCHEDULER_PRIORITY, CONVPROC_SCHEDULER_CLASS);
+        p_preamp_convproc->start_process(CONVPROC_SCHEDULER_PRIORITY,
+                                         CONVPROC_SCHEDULER_CLASS);
         
         // Create cabsym convolver          
-        (*p_profile)->convproc = new Convproc;
-        (*p_profile)->convproc->configure (2, 2, 48000/2, fragm, fragm, Convproc::MAXPART, 0.0);
+        p_convproc = new Convproc;
+        p_convproc->configure (2, 2, 48000/2, fragm, fragm, Convproc::MAXPART, 0.0);
       
-        (*p_profile)->convproc->impdata_create (0, 0, 1, left_impulse, 0, 48000/2);
-        (*p_profile)->convproc->impdata_create (1, 1, 1, right_impulse, 0, 48000/2);
+        p_convproc->impdata_create (0, 0, 1, left_impulse, 0, 48000/2);
+        p_convproc->impdata_create (1, 1, 1, right_impulse, 0, 48000/2);
         
-        (*p_profile)->convproc->start_process (CONVPROC_SCHEDULER_PRIORITY, CONVPROC_SCHEDULER_CLASS);
+        p_convproc->start_process (CONVPROC_SCHEDULER_PRIORITY, CONVPROC_SCHEDULER_CLASS);
+
+        if (is_profile_change)
+        {
+          new_preamp_convproc = p_preamp_convproc;
+          new_convproc = p_convproc;
+        }
+        else
+        {
+          preamp_convproc = p_preamp_convproc;
+          convproc = p_convproc;
+        }
       
         fclose(profile_file);
         

@@ -50,33 +50,33 @@ using namespace std;
 #define DRIVE_CTRL *(ports.drive)
 #define MASTERGAIN_CTRL *(ports.mastergain)
 
-#define AMP_BIAS_CTRL profile_and_convolvers->profile->amp_bias
-#define AMP_KREG_CTRL profile_and_convolvers->profile->amp_Kreg
-#define AMP_UPOR_CTRL profile_and_convolvers->profile->amp_Upor
+#define AMP_BIAS_CTRL profile->amp_bias
+#define AMP_KREG_CTRL profile->amp_Kreg
+#define AMP_UPOR_CTRL profile->amp_Upor
 
-#define PREAMP_BIAS_CTRL profile_and_convolvers->profile->preamp_bias
-#define PREAMP_KREG_CTRL profile_and_convolvers->profile->preamp_Kreg
-#define PREAMP_UPOR_CTRL profile_and_convolvers->profile->preamp_Upor
+#define PREAMP_BIAS_CTRL profile->preamp_bias
+#define PREAMP_KREG_CTRL profile->preamp_Kreg
+#define PREAMP_UPOR_CTRL profile->preamp_Upor
 
 #define LOW_CTRL *(ports.low)
 #define MIDDLE_CTRL *(ports.middle)
 #define HIGH_CTRL *(ports.high)
 
-#define LOW_FREQ_CTRL profile_and_convolvers->profile->tonestack_low_freq
-#define MIDDLE_FREQ_CTRL profile_and_convolvers->profile->tonestack_middle_freq
-#define HIGH_FREQ_CTRL profile_and_convolvers->profile->tonestack_high_freq
+#define LOW_FREQ_CTRL profile->tonestack_low_freq
+#define MIDDLE_FREQ_CTRL profile->tonestack_middle_freq
+#define HIGH_FREQ_CTRL profile->tonestack_high_freq
 
-#define LOW_BAND_CTRL profile_and_convolvers->profile->tonestack_low_band
-#define MIDDLE_BAND_CTRL profile_and_convolvers->profile->tonestack_middle_band
-#define HIGH_BAND_CTRL profile_and_convolvers->profile->tonestack_high_band
+#define LOW_BAND_CTRL profile->tonestack_low_band
+#define MIDDLE_BAND_CTRL profile->tonestack_middle_band
+#define HIGH_BAND_CTRL profile->tonestack_high_band
 
-#define PREAMP_LEVEL profile_and_convolvers->profile->preamp_level
-#define AMP_LEVEL profile_and_convolvers->profile->amp_level
+#define PREAMP_LEVEL profile->preamp_level
+#define AMP_LEVEL profile->amp_level
 
-#define SAG_TIME profile_and_convolvers->profile->sag_time
-#define SAG_COEFF profile_and_convolvers->profile->sag_coeff
+#define SAG_TIME profile->sag_time
+#define SAG_COEFF profile->sag_coeff
 
-#define OUTPUT_LEVEL profile_and_convolvers->profile->output_level
+#define OUTPUT_LEVEL profile->output_level
 
 // Zita-convolver parameters
 #define CONVPROC_SCHEDULER_PRIORITY 0
@@ -89,12 +89,18 @@ using namespace std;
 enum {PORT_LOW, PORT_MIDDLE, PORT_HIGH, PORT_DRIVE, PORT_MASTERGAIN, PORT_VOLUME, PORT_CABINET,
     PORT_IN0, PORT_IN1, PORT_OUT0, PORT_OUT1, PORT_CONTROL, PORT_NOTIFY};
 
-static stPorts ports;
-
 // Holds current profile
-static stProfileAndConvolvers *profile_and_convolvers;
+st_profile *profile;
 // Holds new loaded profile before swap with current profile
-static stProfileAndConvolvers *new_profile_and_convolvers;
+st_profile *new_profile;
+
+// Global variables to send current
+// profile name to second plugin instance,
+// which will be created by Ardour
+// to frequency response analysis.
+// It's dirty, it needs to be rewritten somehow.
+char current_profile_file[10000];
+bool profile_loaded_before = false;
 
 // FAUST generated code
 #include "faust-generated/kpp_tubeamp_dsp.cpp"
@@ -179,8 +185,28 @@ instantiate(const LV2_Descriptor*     descriptor,
   
   if (check_profile_file(name_and_path))
   {
-    plugin->load_profile(name_and_path, plugin->profile_file, rate, &profile_and_convolvers);
+    // Some hosts, like Ardour create second
+    // instance of the plugin for frequency
+    // response analysis. But Ardour does not
+    // send our profile parameters of main plugin instance
+    // to second "analysis" plugin instance.
+    // So we need to do it by this dirty hack,
+    // send current profile name
+    // through global string buffer.
+    if (!profile_loaded_before)
+    {
+      plugin->load_profile(name_and_path, plugin->profile_file,
+                           rate, &profile, false);
+
+      strcpy(current_profile_file, plugin->profile_file);
+    }
+    else
+    {
+      plugin->load_profile(current_profile_file, plugin->profile_file,
+                           rate, &new_profile, false);
+    }
     delete name_and_path;
+
   }
   else 
   {
@@ -189,6 +215,8 @@ instantiate(const LV2_Descriptor*     descriptor,
     return 0;
   }
   
+  profile_loaded_before = true;
+
   return (LV2_Handle)plugin;
 }
 
@@ -216,10 +244,9 @@ work(LV2_Handle                  instance,
   {
     // Free old profile
     stProfileMessage *msg = (stProfileMessage *)data;
-    delete msg->profile_and_convolvers->profile;
-    delete msg->profile_and_convolvers->preamp_convproc;
-    delete msg->profile_and_convolvers->convproc;
-    delete msg->profile_and_convolvers;
+    delete msg->profile;
+    delete msg->preamp_convproc;
+    delete msg->convproc;
   }
   else if (atom->type == plugin->forge.Object)
   {
@@ -237,7 +264,11 @@ work(LV2_Handle                  instance,
     
     if (check_profile_file(path))
     {
-      plugin->load_profile(path, plugin->profile_file, plugin->rate, &new_profile_and_convolvers);
+      plugin->load_profile(path, plugin->profile_file,
+                           plugin->rate, &new_profile, true);
+
+      strcpy(current_profile_file, plugin->profile_file);
+
       respond(handle, lv2_atom_total_size((LV2_Atom*)data), (LV2_Atom*)data);
     }
   }
@@ -255,10 +286,13 @@ work_response(LV2_Handle  instance,
   
   // Schedule work to free the old profile
 	stProfileMessage msg = { { sizeof(st_profile*), plugin->uris.freeSample },
-	                      profile_and_convolvers };
+	                      profile, plugin->preamp_convproc,
+                        plugin->convproc };
         
   // Swap old and new profile structures
-  profile_and_convolvers = new_profile_and_convolvers;
+  profile = new_profile;
+  plugin->preamp_convproc = plugin->new_preamp_convproc;
+  plugin->convproc = plugin->new_convproc;
   // Schedule deleting of old profile structures
 	plugin->schedule->schedule_work(plugin->schedule->handle, sizeof(msg), &msg);
   
@@ -273,25 +307,25 @@ connect_port(LV2_Handle instance,
   stPlugin* plugin = (stPlugin*)instance;
   switch (port) {
       case PORT_LOW:
-          ports.low = (float*) data;
+          plugin->dsp->ports.low = (float*) data;
           break;
       case PORT_MIDDLE:
-          ports.middle = (float *) data;
+          plugin->dsp->ports.middle = (float *) data;
           break;
       case PORT_HIGH:
-          ports.high = (float *) data;
+          plugin->dsp->ports.high = (float *) data;
           break;
       case PORT_DRIVE:
-          ports.drive = (float *) data;
+          plugin->dsp->ports.drive = (float *) data;
           break;
       case PORT_MASTERGAIN:
-          ports.mastergain = (float *) data;
+          plugin->dsp->ports.mastergain = (float *) data;
           break;
       case PORT_VOLUME:
-          ports.volume = (float *) data;
+          plugin->dsp->ports.volume = (float *) data;
           break;
       case PORT_CABINET:
-          ports.cabinet = (float *) data;
+          plugin->dsp->ports.cabinet = (float *) data;
           break;
       case PORT_IN0:
           plugin->inputs[0] = (float *) data;
@@ -306,10 +340,10 @@ connect_port(LV2_Handle instance,
           plugin->outputs[1] = (float *) data;
       break;
       case PORT_CONTROL:
-          ports.control = (LV2_Atom_Sequence *) data;
+          plugin->dsp->ports.control = (LV2_Atom_Sequence *) data;
       break;
       case PORT_NOTIFY:
-          ports.notify = (LV2_Atom_Sequence *) data;
+          plugin->dsp->ports.notify = (LV2_Atom_Sequence *) data;
   }
 }
 
@@ -320,15 +354,15 @@ run(LV2_Handle instance, uint32_t n_samples)
   // Process audio.
   plugin->process_audio(n_samples);
   
-  const uint32_t notify_capacity = ports.notify->atom.size;
+  const uint32_t notify_capacity = plugin->dsp->ports.notify->atom.size;
 	lv2_atom_forge_set_buffer(&plugin->forge,
-	                          (uint8_t*)ports.notify,
+	                          (uint8_t*)plugin->dsp->ports.notify,
 	                          notify_capacity);
   
   lv2_atom_forge_sequence_head(&plugin->forge, &plugin->notify_frame, 0);
   
   // Read Atom messages
-  LV2_ATOM_SEQUENCE_FOREACH(ports.control, ev)
+  LV2_ATOM_SEQUENCE_FOREACH(plugin->dsp->ports.control, ev)
   {
     const LV2_Atom_Object* obj = (const LV2_Atom_Object*)&ev->body;
     

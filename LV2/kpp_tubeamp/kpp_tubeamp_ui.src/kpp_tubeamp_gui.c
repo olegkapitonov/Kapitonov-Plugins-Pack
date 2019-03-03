@@ -102,7 +102,7 @@ typedef struct
   
   LV2_Atom_Forge forge;  // Forge for writing atoms in run thread
   
-  uint8_t forge_buf[1024];
+  uint8_t forge_buf[4096];
   
   tubeAmpURIs uris;
   

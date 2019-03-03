@@ -66,19 +66,14 @@ struct stTubeAmpURIs
   LV2_URID freeSample;
 };
 
-struct stProfileAndConvolvers
-{
-  st_profile *profile;
-  Convproc *convproc;
-  Convproc *preamp_convproc;
-};
-
 // Structure of Atom message
 // to free old profile data
 struct stProfileMessage
 {
 	LV2_Atom atom;
-	stProfileAndConvolvers*  profile_and_convolvers;
+	st_profile*  profile;
+  Convproc *preamp_convproc;
+  Convproc *convproc;
 };
 
 // Needed for compatability with FAUST generated code

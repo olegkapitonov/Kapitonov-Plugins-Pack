@@ -1328,7 +1328,7 @@ class kpp_deadgate : public dsp {
 		float fSlow1 = (0.0f - fSlow0);
 		float fSlow2 = powf(10.0f, (0.0500000007f * float(fVslider1)));
 		for (int i = 0; (i < count); i = (i + 1)) {
-			float fTemp0 = (float(input1[i]) + float(input0[i]));
+			float fTemp0 = (float(input0[i]) + float(input1[i]));
 			fVec0[0] = fTemp0;
 			fRec11[0] = ((fConst13 * fRec11[1]) + (fConst14 * ((fConst11 * fTemp0) + (fConst15 * fVec0[1]))));
 			float fTemp1 = (max(fSlow0, fRec11[0]) + min(fSlow1, fRec11[0]));
