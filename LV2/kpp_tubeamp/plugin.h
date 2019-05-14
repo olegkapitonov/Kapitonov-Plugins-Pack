@@ -201,7 +201,7 @@ struct stPlugin {
       
         // IRs in *.tapf are 48000 Hz,
         // calculate ratio for resampling
-        int ratio = rate/48000;
+        float ratio = (float)rate / 48000.0;
       
         st_impulse preamp_impheader, impheader;
         
@@ -256,7 +256,7 @@ struct stPlugin {
         // with Zita-resampler
         else
         {
-          preamp_impulse = new float[preamp_impheader.sample_count*ratio];
+          preamp_impulse = new float[(uint)(preamp_impheader.sample_count*ratio)];
                 
           Resampler *resampl = new Resampler();
           resampl->setup(48000,rate,1,48);
@@ -264,7 +264,7 @@ struct stPlugin {
           int k = resampl->inpsize();
                 
           float *preamp_in = new float[preamp_impheader.sample_count + k/2 - 1 + k - 1];
-          float *preamp_out = new float[(preamp_impheader.sample_count + k/2 - 1 + k - 1)*ratio];
+          float *preamp_out = new float[(uint)((preamp_impheader.sample_count + k/2 - 1 + k - 1)*ratio)];
           
           // Create paddig before and after signal, needed for zita-resampler
           for (int i = 0; i < preamp_impheader.sample_count + k/2 - 1 + k - 1; i++)
@@ -278,13 +278,13 @@ struct stPlugin {
           }
                 
           resampl->inp_count = preamp_impheader.sample_count + k/2 - 1 + k - 1;
-          resampl->out_count = (preamp_impheader.sample_count + k/2 - 1 + k - 1)*ratio;
+          resampl->out_count = (uint)((preamp_impheader.sample_count + k/2 - 1 + k - 1)*ratio);
           resampl->inp_data = preamp_in;
           resampl->out_data = preamp_out;
                 
           resampl->process();
                 
-          for (int i=0;i<preamp_impheader.sample_count*ratio;i++)
+          for (uint i = 0; i < (uint)(preamp_impheader.sample_count*ratio); i++)
           {
             preamp_impulse[i] = preamp_out[i] / ratio;
           }
@@ -295,8 +295,8 @@ struct stPlugin {
           
           delete resampl;
                 
-          left_impulse = new float[impheader.sample_count * ratio];
-          right_impulse = new float[impheader.sample_count * ratio];
+          left_impulse = new float[(uint)(impheader.sample_count * ratio)];
+          right_impulse = new float[(uint)(impheader.sample_count * ratio)];
                 
           float *inp_data;
           float *out_data;
@@ -321,19 +321,19 @@ struct stPlugin {
             inp_data[i*2+1] = right_temp_buffer[i-k/2+1];
           }
                 
-          out_data = new float[(impheader.sample_count + k/2 - 1 + k - 1)*ratio*2];
+          out_data = new float[(uint)((impheader.sample_count + k/2 - 1 + k - 1)*ratio*2)];
                 
           resampl->inp_count = impheader.sample_count + k/2 - 1 + k - 1;
-          resampl->out_count = (impheader.sample_count + k/2 - 1 + k - 1)*ratio;
+          resampl->out_count = (uint)((impheader.sample_count + k/2 - 1 + k - 1)*ratio);
           resampl->inp_data = inp_data;
           resampl->out_data = out_data;
                 
           resampl->process();
                 
-          for (int i=0;i<impheader.sample_count*ratio;i++)
+          for (uint i = 0; i < (uint)(impheader.sample_count*ratio); i++)
           {
-            left_impulse[i] = out_data[i*2]/ratio;
-            right_impulse[i] = out_data[i*2+1]/ratio;
+            left_impulse[i] = out_data[i*2] / ratio;
+            right_impulse[i] = out_data[i*2+1] / ratio;
           }
                 
           delete inp_data;
@@ -350,10 +350,10 @@ struct stPlugin {
 
         // Create preamp convolver
         p_preamp_convproc = new Convproc;
-        p_preamp_convproc->configure (1, 1, preamp_impheader.sample_count*ratio,
+        p_preamp_convproc->configure (1, 1, (uint)(preamp_impheader.sample_count*ratio),
                                       fragm, fragm, Convproc::MAXPART, 0.0);
         p_preamp_convproc->impdata_create (0, 0, 1, preamp_impulse,
-                                      0, preamp_impheader.sample_count*ratio);
+                                      0, (uint)(preamp_impheader.sample_count*ratio));
         
         p_preamp_convproc->start_process(CONVPROC_SCHEDULER_PRIORITY,
                                          CONVPROC_SCHEDULER_CLASS);
