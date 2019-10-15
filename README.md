@@ -81,7 +81,7 @@ and adjust the signal level.
 
 For 1.0 release version:
 
-1. Each plugin sorce code folder contains `build.sh` shell script.
+1. Each plugin source code folder contains `build.sh` shell script.
    Run it.
 2. LV2 plugin bundle will be in `plugin_name.lv2` folder inside
    the plugin source code folder. LADSPA .so file will be in the
