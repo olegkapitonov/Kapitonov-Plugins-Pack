@@ -65,15 +65,18 @@ and adjust the signal level.
    VST versions for Windows are planned for the future.
 2. Cairo library for GUI.
 3. Zenity for File Select dialog (for profile changing in tubeAmp).
-4. fftw3 library.
+4. Zita-resampler 1.6 and zita-convolver 4.0 libraries.
 
 ### Dependencies for building
 
 1. g++ compiler.
-2. Cairo library development files (headers, pkg-info).
-3. Boost development files.
-4. fftw3 development files.
-5. Faust 2.x (or 0.9.x) compiler and libraries, for generating code from
+2. Meson build system.
+3. Cairo library development files (headers, pkg-info).
+4. Boost development files.
+5. Zita-resampler 1.6 development files.
+6. Zita-convolver 4.0 development files.
+7. LV2 or LADSPA development files.
+9. Faust 2.x (or 0.9.x) compiler and libraries, for generating code from
    DSP source files.
 
 
@@ -94,11 +97,11 @@ For 1.0 release version:
  
 For the version from master branch (thanks to [brummer10](https://github.com/brummer10)):
 
-1. Run 'make' command.
-   Default build, aka 'make' build the LV2 plugins, 'make LADSPA' build the ladspa plugins, 'make LV2 LADSPA' build both versions. 'make faust' regenerate the faust generated *-cpp files.
-2. Run 'make install' command.
-   Plugins will be installed to ~/.ladspa and ~/.lv2 if the command was run from user
-   or to /usr/lib/ladspa and /usr/lib/lv2 if the command was run from root.
+1. Run `meson build` and then `ninja -C build` in the source directory.
+2. Run `ninja -C build install` to install to /usr/lib/ladspa and /usr/lib/lv2.
+   To install to your user directory, run
+  `meson build --reconfigure -Dladspadir=~/.ladspa -Dlv2dir=~/.lv2` and then
+  `ninja -C build install`.
 3. Launch host application (e. g. Ardour). Find desired plugin 
    in the library. Names will have `kpp_` prefix.
 

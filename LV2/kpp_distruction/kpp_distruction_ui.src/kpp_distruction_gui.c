@@ -104,7 +104,7 @@ typedef struct
   // Port number (from enum) of the Dial, which is now
   // adjusted by the user
   // -1 means that no dial is adjusted
-  int active_dial = -1;
+  int active_dial;
 
   // Buffer for holding full path to image files
   char name_and_path[10000];
@@ -164,6 +164,8 @@ instantiate(const struct _LV2UI_Descriptor * descriptor,
   }
   
   win_t *win = (win_t *)malloc(sizeof(win_t));
+
+  win->active_dial = -1;
   
   win->driveDial.value = 0;
   win->driveDial.start_value = 0;
@@ -614,7 +616,6 @@ static const LV2UI_Descriptor descriptor =
   extension_data
 };
 
-extern "C"
 LV2_SYMBOL_EXPORT
 const LV2UI_Descriptor*
 lv2ui_descriptor(uint32_t index)

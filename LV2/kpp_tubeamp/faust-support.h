@@ -32,6 +32,7 @@ public:
 class dsp {
 
     public:
+        stPorts ports;
 
         dsp() {}
         virtual ~dsp() {}

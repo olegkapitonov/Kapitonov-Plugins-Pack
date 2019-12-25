@@ -23,10 +23,12 @@
 #include <stdint.h>
 #include <sys/stat.h>
 
-#include "thirdparty/zita-resampler/resampler.h"
-#include "thirdparty/zita-resampler/resampler.cc"
-#include "thirdparty/zita-convolver/zita-convolver.h"
-#include "thirdparty/zita-convolver/zita-convolver.cc"
+#include <zita-resampler/resampler.h>
+#include <zita-convolver.h>
+
+#if ZITA_CONVOLVER_MAJOR_VERSION != 4
+#error "This program requires zita-convolver 4.x.x"
+#endif
 
 #include <lv2/lv2plug.in/ns/ext/atom/util.h>
 #include <lv2/lv2plug.in/ns/ext/urid/urid.h>
@@ -103,7 +105,7 @@ char current_profile_file[10000];
 bool profile_loaded_before = false;
 
 // FAUST generated code
-#include "faust-generated/kpp_tubeamp_dsp.cpp"
+#include "kpp_tubeamp_dsp.ipp"
 #include "plugin.h"
 
 // Check *.tapf file signature

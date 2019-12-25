@@ -1,0 +1,5 @@
+option('ladspa', type: 'feature', value: 'auto', description: 'build LADSPA plugins')
+option('ladspadir', type: 'string', value: 'lib/ladspa', description: 'directory to install LADSPA plugins')
+option('lv2', type: 'feature', value: 'auto', description: 'build LV2 plugins')
+option('lv2dir', type: 'string', value: 'lib/lv2', description: 'directory to install LV2 plugins')
+option('gui', type: 'feature', value: 'auto', description: 'build LV2 plugin GUIs')
