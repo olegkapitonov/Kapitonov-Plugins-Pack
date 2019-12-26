@@ -42,6 +42,7 @@
 using namespace std;
 
 #define DEFAULT_PROFILE "American Clean"
+#define DEFAULT_PROFILE_PATH ("/profiles/" DEFAULT_PROFILE ".tapf")
 
 // Defines for compatability with
 // FAUST generated code
@@ -108,6 +109,14 @@ int check_profile_file(const char *path)
   }
 
   return status;
+}
+
+static void set_profile(stPlugin *plugin, stProfile *profile)
+{
+  plugin->profile = profile;
+  plugin->dsp->profile = &profile->header;
+  plugin->convproc = &profile->convproc;
+  plugin->preamp_convproc = &profile->preamp_convproc;
 }
 
 // LV2 Callback functions
@@ -177,6 +186,16 @@ instantiate(const LV2_Descriptor*     descriptor,
 
   plugin->bundle_path = bundle_path;
 
+  std::string path = plugin->bundle_path + DEFAULT_PROFILE_PATH;
+  stProfile *profile = stPlugin::load_profile(path.c_str(), plugin->rate);
+  if (!profile)
+  {
+    fprintf(stderr,"Error while loading default profile!\n");
+  }
+  else
+  {
+    set_profile(plugin, profile);
+  }
   return (LV2_Handle)plugin;
 }
 
@@ -257,10 +276,7 @@ work_response(LV2_Handle  instance,
 
   // Swap old and new profile structures
   stProfileMessage *msg = (stProfileMessage *)data;
-  plugin->profile = msg->body.profile;
-  plugin->dsp->profile = &msg->body.profile->header;
-  plugin->convproc = &msg->body.profile->convproc;
-  plugin->preamp_convproc = &msg->body.profile->preamp_convproc;
+  set_profile(plugin, msg->body.profile);
   // Schedule deleting of old profile structures
   plugin->schedule->schedule_work(plugin->schedule->handle, sizeof(freemsg), &freemsg);
 
@@ -476,7 +492,7 @@ restore(LV2_Handle                  instance,
   std::string path;
   if (!value)
   {
-    path = plugin->bundle_path +  "/profiles/" DEFAULT_PROFILE ".tapf";
+    path = plugin->bundle_path + DEFAULT_PROFILE_PATH;
   }
   else if (type != plugin->uris.atom_Path)
   {
@@ -484,12 +500,12 @@ restore(LV2_Handle                  instance,
   }
   else
   {
+    // Map abstract state path to absolute path
     char *abspath = paths->absolute_path(paths->handle, (const char *) value);
     path = abspath;
     free(abspath);
   }
 
-  // Map abstract state path to absolute path
 
   if (check_profile_file(path.c_str()))
   {
