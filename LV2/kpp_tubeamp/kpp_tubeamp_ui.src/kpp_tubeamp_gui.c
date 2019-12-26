@@ -93,7 +93,6 @@ typedef struct {
 typedef struct
 {
   xcb_connection_t *connection;
-  int scr;
 
   xcb_window_t win;
 
@@ -292,7 +291,7 @@ instantiate(const struct _LV2UI_Descriptor * descriptor,
   xcb_screen_t *screen =
     xcb_setup_roots_iterator(xcb_get_setup(win->connection)).data;
 
-  win_init(win, screen, (xcb_window_t) parentXwindow);
+  win_init(win, screen, (xcb_window_t) (size_t) parentXwindow);
 
   win->visual = xcb_aux_find_visual_by_id(screen, screen->root_visual);
   xcb_clear_area(win->connection, 0, win->win, 0, 0, 0, 0);
@@ -834,8 +833,9 @@ win_handle_events(win_t *win)
       break;
     }
     free(event);
-    xcb_flush(win->connection);
   }
+  xcb_flush(win->connection);
+
   if (win->profile_select_fd != -1)
   {
     size_t avail = sizeof(win->new_profile_path) - 1;

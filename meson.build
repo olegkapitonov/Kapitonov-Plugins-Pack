@@ -6,7 +6,6 @@ m_dep = cc.find_library('m', required : false)
 cxx = meson.get_compiler('cpp')
 
 boost = cxx.has_header('boost/circular_buffer.hpp', required: true)
-x11 = dependency('x11', required: get_option('gui'))
 xcb = dependency('xcb', required: get_option('gui'))
 xcb_aux = dependency('xcb-aux', required: get_option('gui'))
 xcb_icccm = dependency('xcb-icccm', required: get_option('gui'))

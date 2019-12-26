@@ -47,12 +47,12 @@ foreach suffix, opts : plugins
     install: true,
     install_dir : get_option('lv2dir') / bundle)
 
-  if x11.found() and cairo.found() and opts.get('gui', false)
+  if xcb.found() and cairo.found() and opts.get('gui', false)
     shared_library('@0@ui'.format(name),
       name / '@0@_ui.src/@0@_gui.c'.format(name),
       c_args: ['-DPLUGIN_URI="@0@"'.format(uri), '-DFAUST_UI=1'],
       name_prefix: '',
-      dependencies: [m_dep, x11, xcb, xcb_aux, xcb_icccm, cairo],
+      dependencies: [m_dep, xcb, xcb_aux, xcb_icccm, cairo],
       install: true,
       install_dir : get_option('lv2dir') / bundle)
   endif
