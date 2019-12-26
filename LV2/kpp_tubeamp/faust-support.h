@@ -20,6 +20,8 @@
 #ifndef FAUST_SUPPORT_H
 #define FAUST_SUPPORT_H
 
+#include "kpp_tubeamp.h"
+
 class UI {
 public:
     UI(){};
@@ -33,6 +35,7 @@ class dsp {
 
     public:
         stPorts ports;
+        st_profile_header *profile;
 
         dsp() {}
         virtual ~dsp() {}

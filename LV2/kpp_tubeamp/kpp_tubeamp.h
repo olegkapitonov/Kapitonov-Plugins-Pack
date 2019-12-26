@@ -21,6 +21,19 @@
 #ifndef KPP_TUBEAMP_H
 #define KPP_TUBEAMP_H
 
+#include <map>
+
+#include <zita-resampler/resampler.h>
+#include <zita-convolver.h>
+
+#if ZITA_CONVOLVER_MAJOR_VERSION != 4
+#error "This program requires zita-convolver 4.x.x"
+#endif
+
+#include <lv2/lv2plug.in/ns/ext/urid/urid.h>
+#include "lv2/lv2plug.in/ns/ext/atom/forge.h"
+
+#include "profile.h"
 
 /**
  * On Intel set FZ (Flush to Zero) and DAZ (Denormals Are Zero)
@@ -66,14 +79,25 @@ struct stTubeAmpURIs
   LV2_URID freeSample;
 };
 
+struct stProfile
+{
+  std::string path;
+  st_profile_header header;
+  Convproc preamp_convproc;
+  Convproc convproc;
+};
+
 // Structure of Atom message
-// to free old profile data
+// to send profile data
+struct stProfileMessageBody
+{
+  stProfile *profile;
+};
+
 struct stProfileMessage
 {
-	LV2_Atom atom;
-	st_profile*  profile;
-  Convproc *preamp_convproc;
-  Convproc *convproc;
+  LV2_Atom atom;
+  stProfileMessageBody body;
 };
 
 // Needed for compatability with FAUST generated code

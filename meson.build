@@ -1,13 +1,15 @@
-project('kpp', 'cpp', 'c', license: 'GPL-3.0', version: '1.0',
+project('kpp', 'cpp', 'c', license: 'GPL-3.0-or-later', version: '1.0',
   default_options : ['buildtype=debugoptimized'])
 
 cc = meson.get_compiler('cpp')
 m_dep = cc.find_library('m', required : false)
-thread_dep = dependency('threads')
 cxx = meson.get_compiler('cpp')
 
 boost = cxx.has_header('boost/circular_buffer.hpp', required: true)
 x11 = dependency('x11', required: get_option('gui'))
+xcb = dependency('xcb', required: get_option('gui'))
+xcb_aux = dependency('xcb-aux', required: get_option('gui'))
+xcb_icccm = dependency('xcb-icccm', required: get_option('gui'))
 cairo = dependency('cairo', required: get_option('gui'))
 
 faust = find_program('faust', required: true)

@@ -51,7 +51,7 @@ typedef struct
     
     float output_level;
     
-}st_profile;
+}st_profile_header;
 
 // Header structure of
 // impulse response data
@@ -61,6 +61,6 @@ typedef struct {
     int sample_rate;
     int channel;
     int sample_count;
-}st_impulse;
+}st_impulse_header;
 
 #endif

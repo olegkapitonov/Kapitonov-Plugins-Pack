@@ -17,11 +17,14 @@
  * --------------------------------------------------------------------------
  */
 
+#include <errno.h>
+#include <fcntl.h>
 #include <libgen.h>
+#include <limits.h>
 #include <math.h>
 #include <stdint.h>
 #include <string.h>
-#include <pthread.h>
+#include <unistd.h>
 
 #include "lv2/lv2plug.in/ns/lv2core/lv2.h"
 #include "lv2/lv2plug.in/ns/extensions/ui/ui.h"
@@ -33,41 +36,43 @@
 #include <stdlib.h>
 
 #include <cairo.h>
-#include <cairo-xlib.h>
+#include <cairo-xcb.h>
 
-#include "X11/Xutil.h"
+#include <xcb/xcb.h>
+#include <xcb/xcb_aux.h>
+#include <xcb/xcb_icccm.h>
 
 // Port numbers for communication with the main LV2 plugin module
 enum {PORT_BASS, PORT_MIDDLE, PORT_TREBLE, PORT_DRIVE, PORT_MASTERGAIN, PORT_VOLUME,
   PORT_CABINET, PORT_IN0, PORT_IN1, PORT_OUT0, PORT_OUT1, PORT_CONTROL, PORT_NOTIFY};
 
 // Dial GUI element structure
-typedef struct 
+typedef struct
 {
   int value; // 0 - 100
   int start_value; // Holds value at the start of dialing
   int base_x; // Coordinates of Dial in main window
-  int base_y; // 
+  int base_y; //
 } st_dial;
 
 // Slider GUI element structure
-typedef struct 
+typedef struct
 {
   int value; // 0 - 100
   int start_value; // Holds value at the start of sliding
   int base_x; // Coordinates of Slider in main window
-  int base_y; // 
+  int base_y; //
 } st_slider;
 
 // Point
-typedef struct 
+typedef struct
 {
   int x;
   int y;
 }st_point;
 
 // Color
-typedef struct 
+typedef struct
 {
   double r;
   double g;
@@ -85,101 +90,99 @@ typedef struct {
 } tubeAmpURIs;
 
 // GUI window structure
-typedef struct 
+typedef struct
 {
-  Display *dpy;
+  xcb_connection_t *connection;
   int scr;
 
-  Window win;
+  xcb_window_t win;
 
   int width, height;
-  long event_mask;
-    
+
   void *controller;
-    
+
   LV2UI_Write_Function write_function;
   LV2UI_Resize* resize;
   LV2_URID_Map* map;
-  
+
   LV2_Atom_Forge forge;  // Forge for writing atoms in run thread
-  
+
   uint8_t forge_buf[4096];
-  
+
   tubeAmpURIs uris;
-  
+
   // Main window
   //win_t win;
 
   // Dials
   st_dial driveDial;
-  
+
   st_dial bassDial;
   st_dial middleDial;
   st_dial trebleDial;
-  
+
   st_dial mastergainDial;
-  
+
   // Sliders
-  
+
   st_slider levelSlider;
   st_slider cabinetSlider;
 
-  // Hold mouse coordinates at the start of dialing 
+  // Hold mouse coordinates at the start of dialing
   int pos_x;
   int pos_y;
 
   // Cairo objects
   cairo_t *cr;
   cairo_surface_t *surface;
-  Visual *visual;
+  xcb_visualtype_t *visual;
 
-  cairo_surface_t *image,*image2;
+  cairo_surface_t *image, *image2;
 
   // Port number (from enum) of the Dial, which is now
   // adjusted by the user
   // -1 means that no dial is adjusted
   int active_dial;
-  
-  bool profile_select;
 
-  // Buffer for holding full path to image files
-  char name_and_path[10000];
-  
-  char profile_path[10000];
-    
+  int profile_select_fd;
+
+  char profile_path[PATH_MAX];
+  char new_profile_path[PATH_MAX];
+  size_t new_profile_path_len;
+
 } win_t;
 
 // Create main window
-static void win_init(win_t *win, Window parentXwindow)
+static void win_init(win_t *win, xcb_screen_t *screen,
+    xcb_window_t parentXwindow)
 {
   win->width = 1000;
   win->height = 376;
 
-  win->scr = DefaultScreen(win->dpy);
-  
-  win->win = XCreateSimpleWindow(win->dpy, parentXwindow, 0, 0,
-                                win->width, win->height, 0,
-                                0, 0);
+  win->win = xcb_generate_id(win->connection);
 
-  win->event_mask = StructureNotifyMask
-                    |ExposureMask
-                    |ButtonPressMask
-                    |Button1MotionMask;
-                      
-  XSizeHints sizeHints;
-  memset(&sizeHints, 0, sizeof(sizeHints));
-    
-  sizeHints.flags      = PMinSize|PMaxSize|PSize;
-  sizeHints.min_width  = win->width;
-  sizeHints.min_height = win->height;
-  sizeHints.max_width  = win->width;;
-  sizeHints.max_height = win->height;
-    
-  XSetWMNormalHints(win->dpy, win->win, &sizeHints);
-                      
-  XSelectInput(win->dpy, win->win, win->event_mask);
+  uint32_t mask = XCB_CW_EVENT_MASK;
+  uint32_t mask_values[1] = {
+    XCB_EVENT_MASK_STRUCTURE_NOTIFY |
+    XCB_EVENT_MASK_EXPOSURE |
+    XCB_EVENT_MASK_BUTTON_PRESS |
+    XCB_EVENT_MASK_BUTTON_1_MOTION };
 
-  XMapWindow(win->dpy, win->win);
+  xcb_create_window(win->connection, XCB_COPY_FROM_PARENT,
+      win->win, parentXwindow,
+      0, 0, win->width, win->height, 0, XCB_WINDOW_CLASS_INPUT_OUTPUT,
+      screen->root_visual, mask, mask_values);
+
+  xcb_size_hints_t size_hints;
+  memset(&size_hints, 0, sizeof(size_hints));
+  xcb_icccm_size_hints_set_size(&size_hints, 1, win->width, win->height);
+  xcb_icccm_size_hints_set_min_size(&size_hints, win->width, win->height);
+  xcb_icccm_size_hints_set_max_size(&size_hints, win->width, win->height);
+
+  xcb_icccm_set_wm_normal_hints(win->connection, win->win, &size_hints);
+
+  xcb_map_window(win->connection, win->win);
+  xcb_flush(win->connection);
 }
 
 // LV2 initialization function
@@ -193,80 +196,81 @@ instantiate(const struct _LV2UI_Descriptor * descriptor,
             const LV2_Feature * const * features)
 {
   // Quit if GUI module loaded with wrong main module
-  if (strcmp(plugin_uri, PLUGIN_URI)) 
+  if (strcmp(plugin_uri, PLUGIN_URI))
   {
     fprintf(stderr,
       "%s: ERROR: this GUI does not support plugin with URI %s\n",
       PLUGIN_URI, plugin_uri);
     return NULL;
   }
-  
-  win_t *win = (win_t *)malloc(sizeof(win_t));
+
+  win_t *win = (win_t *) malloc(sizeof(win_t));
 
   win->active_dial = -1;
-  
-  win->profile_select = false;
-  
+
+  win->profile_select_fd = -1;
+
   win->driveDial.value = 0;
   win->driveDial.start_value = 0;
   win->driveDial.base_x = 215;
   win->driveDial.base_y = 235;
-  
+
   win->bassDial.value = 0;
   win->bassDial.start_value = 0;
   win->bassDial.base_x = 377;
   win->bassDial.base_y = 235;
-  
+
   win->middleDial.value = 0;
   win->middleDial.start_value = 0;
   win->middleDial.base_x = 479;
   win->middleDial.base_y = 235;
-  
+
   win->trebleDial.value = 0;
   win->trebleDial.start_value = 0;
   win->trebleDial.base_x = 583;
   win->trebleDial.base_y = 235;
-  
+
   win->mastergainDial.value = 0;
   win->mastergainDial.start_value = 0;
   win->mastergainDial.base_x = 808;
   win->mastergainDial.base_y = 235;
-  
+
   win->levelSlider.value = 0;
   win->levelSlider.start_value = 0;
   win->levelSlider.base_x = 511;
   win->levelSlider.base_y = 354;
-  
+
   win->cabinetSlider.value = 0;
   win->cabinetSlider.start_value = 0;
   win->cabinetSlider.base_x = 812;
   win->cabinetSlider.base_y = 354;
-  
-  strcpy(win->profile_path, "American Clean.tapf");
-  
+
+  win->profile_path[0] = '\0';
+
   // X11 handle of host window, in which plugin GUI
   // window must be embedded
   void * parentXwindow = 0;
-    
+
   // Resize function provided by LV2 host
   LV2UI_Resize* resize = NULL;
-    
+
   // Obtain this pointers
-  for (int i = 0; features[i]; ++i) 
+  for (int i = 0; features[i]; ++i)
   {
-    if (!strcmp(features[i]->URI, LV2_UI__parent)) 
+    if (!strcmp(features[i]->URI, LV2_UI__parent))
     {
       parentXwindow = features[i]->data;
     }
-    else if (!strcmp(features[i]->URI, LV2_UI__resize)) 
+    else if (!strcmp(features[i]->URI, LV2_UI__resize))
     {
       resize = (LV2UI_Resize*)features[i]->data;
     }
-    if (!strcmp(features[i]->URI, LV2_URID__map)) {
+    if (!strcmp(features[i]->URI, LV2_URID__map))
+    {
       win->map = (LV2_URID_Map*)features[i]->data;
     }
   }
-  
+
   win->uris.atom_eventTransfer = win->map->map(win->map->handle, LV2_ATOM__eventTransfer);
   win->uris.patch_Get = win->map->map(win->map->handle, LV2_PATCH__Get);
   win->uris.patch_Set = win->map->map(win->map->handle, LV2_PATCH__Set);
@@ -274,60 +278,63 @@ instantiate(const struct _LV2UI_Descriptor * descriptor,
   win->uris.patch_property = win->map->map(win->map->handle, LV2_PATCH__property);
   win->uris.patch_value = win->map->map(win->map->handle, LV2_PATCH__value);
   win->uris.atom_Path = win->map->map(win->map->handle, LV2_ATOM__Path);
-  
+
   lv2_atom_forge_init(&win->forge, win->map);
 
-  win->dpy = XOpenDisplay(0);
+  win->connection = xcb_connect(NULL, NULL);
 
-  if (win->dpy == NULL) 
+  if (win->connection == NULL)
   {
     fprintf(stderr, "Failed to open display\n");
     return NULL;
   }
 
-  win_init(win,(Window)parentXwindow);
-    
-  win->visual = DefaultVisual(win->dpy, DefaultScreen (win->dpy));
-  XClearWindow(win->dpy, win->win);
-  win->surface = cairo_xlib_surface_create (win->dpy, win->win, win->visual,
+  xcb_screen_t *screen =
+    xcb_setup_roots_iterator(xcb_get_setup(win->connection)).data;
+
+  win_init(win, screen, (xcb_window_t) parentXwindow);
+
+  win->visual = xcb_aux_find_visual_by_id(screen, screen->root_visual);
+  xcb_clear_area(win->connection, 0, win->win, 0, 0, 0, 0);
+  win->surface = cairo_xcb_surface_create(win->connection, win->win, win->visual,
                                         win->width, win->height);
   win->cr = cairo_create(win->surface);
-  
-  strcpy(win->name_and_path,bundle_path);
-  strcat(win->name_and_path,"/base_scale.png");
-    
+
+  char image_path[PATH_MAX];
+
   // Load background image
-  win->image = cairo_image_surface_create_from_png (win->name_and_path);
-  
-  strcpy(win->name_and_path,bundle_path);
-  strcat(win->name_and_path,"/light.png");
-  
+  snprintf(image_path, sizeof(image_path), "%s/base_scale.png", bundle_path);
+  image_path[sizeof(image_path) - 1] = '\0';
+  win->image = cairo_image_surface_create_from_png (image_path);
+
   // Load dial point image
-  win->image2 = cairo_image_surface_create_from_png (win->name_and_path);
-  
+  snprintf(image_path, sizeof(image_path), "%s/light.png", bundle_path);
+  image_path[sizeof(image_path) - 1] = '\0';
+  win->image2 = cairo_image_surface_create_from_png (image_path);
+
   // Return to host the X11 handle of created window
-  *widget = (void*)win->win;
-  
+  *widget = (void*) (size_t) win->win;
+
   if (resize)
   {
     win->resize = resize;
     // Ask the host to properly resize the plugin host window
     resize->ui_resize(resize->handle, win->width, win->height);
   }
-  
+
   win->controller = controller;
   win->write_function = write_function;
-  
-  
+
+
   lv2_atom_forge_set_buffer(&win->forge, win->forge_buf, sizeof(win->forge_buf));
   LV2_Atom_Forge_Frame frame;
   LV2_Atom* msg = (LV2_Atom*)lv2_atom_forge_object(&win->forge,
                                                    &frame,
                                                    0,
                                                    win->uris.patch_Get);
-	lv2_atom_forge_pop(&win->forge, &frame);
+  lv2_atom_forge_pop(&win->forge, &frame);
 
-	win->write_function(win->controller, PORT_CONTROL, lv2_atom_total_size(msg),
+  win->write_function(win->controller, PORT_CONTROL, lv2_atom_total_size(msg),
                       win->uris.atom_eventTransfer,
                       msg);
 
@@ -336,7 +343,7 @@ instantiate(const struct _LV2UI_Descriptor * descriptor,
 
 static void win_deinit(win_t *win)
 {
-  XDestroyWindow(win->dpy, win->win);
+  xcb_destroy_window(win->connection, win->win);
 }
 
 static void
@@ -344,11 +351,11 @@ cleanup(LV2UI_Handle ui)
 {
   win_t *win = (win_t *)ui;
   win_deinit(win);
-  XCloseDisplay(win->dpy);
-  free(win->cr);
-  free(win->surface);
-  free(win->image);
-  free(win->image2);
+  cairo_destroy(win->cr);
+  cairo_surface_destroy(win->surface);
+  cairo_surface_destroy(win->image);
+  cairo_surface_destroy(win->image2);
+  xcb_disconnect(win->connection);
   free(win);
 }
 
@@ -392,7 +399,7 @@ void draw_dial(cairo_t *cr, cairo_surface_t *image, int value, int base_x, int b
 {
   st_rgb color = value_to_color(value);
   st_point p = value_to_xy(value);
-    
+
   cairo_set_source_rgb(cr, color.r, color.g, color.b);
   cairo_arc(cr, base_x+p.x+10.5, base_y+p.y+10, 5.5, 0, 2 * M_PI);
   cairo_fill(cr);
@@ -403,9 +410,9 @@ void draw_dial(cairo_t *cr, cairo_surface_t *image, int value, int base_x, int b
 void draw_slider(cairo_t *cr, int value, int base_x, int base_y)
 {
   cairo_set_source_rgb(cr, 0, 0.35, 0);
-  
+
   int length = (int)(1.83 * value);
-  
+
   cairo_rectangle(cr, base_x, base_y, length, 19);
   cairo_fill(cr);
 }
@@ -413,29 +420,20 @@ void draw_slider(cairo_t *cr, int value, int base_x, int base_y)
 static void win_draw(win_t *win)
 {
   cairo_push_group (win->cr);
-  
+
   // File select dialog is pending
-  if (win->profile_select)
+  if (win->profile_select_fd != -1)
   {
     // Draw profile name element
     cairo_set_source_rgb(win->cr, 1, 0, 0);
     cairo_rectangle(win->cr, 75, 354, 439 - 75, 373 - 354);
     cairo_fill(win->cr);
-  
+
     // Draw profile name
-    cairo_set_source_rgb(win->cr, 0, 0, 0); 
+    cairo_set_source_rgb(win->cr, 0, 0, 0);
     cairo_select_font_face(win->cr, "sans", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
     cairo_set_font_size(win->cr, 18);
     cairo_move_to(win->cr, 77, 370);
-    
-    char *profile_name;
-    profile_name = (char*)malloc(10000 * sizeof(char));
-    
-    strcpy(profile_name, basename(win->profile_path));
-    profile_name[strlen(profile_name) - 5] = 0;
-    
-    cairo_show_text(win->cr, profile_name);
-    free(profile_name);
   }
   // Draw profile name element in normal state
   else
@@ -444,37 +442,40 @@ static void win_draw(win_t *win)
     cairo_set_source_rgb(win->cr, 0, 0, 0);
     cairo_rectangle(win->cr, 75, 354, 439 - 75, 373 - 354);
     cairo_fill(win->cr);
-  
+
     // Draw profile name
-    cairo_set_source_rgb(win->cr, 1, 1, 1); 
+    cairo_set_source_rgb(win->cr, 1, 1, 1);
     cairo_select_font_face(win->cr, "sans", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
     cairo_set_font_size(win->cr, 18);
     cairo_move_to(win->cr, 77, 370);
-    
-    char *profile_name;
-    profile_name = (char*)malloc(10000 * sizeof(char));
-    
-    strcpy(profile_name, basename(win->profile_path));
-    profile_name[strlen(profile_name) - 5] = 0;
-    
-    cairo_show_text(win->cr, profile_name);
-    free(profile_name);
   }
-    
+
+  char profile_name[PATH_MAX];
+
+  strncpy(profile_name, win->profile_path, sizeof(profile_name));
+  size_t profile_name_len = strlen(profile_name);
+  if (profile_name_len >= 5)
+  {
+    profile_name[strlen(profile_name) - 5] = '\0';
+    char *base = basename(profile_name);
+
+    cairo_show_text(win->cr, base);
+  }
+
   // Draw background image
   cairo_set_source_surface (win->cr, win->image, 0, 0);
   cairo_paint (win->cr);
-  
+
   draw_slider(win->cr,
               win->levelSlider.value,
               win->levelSlider.base_x,
               win->levelSlider.base_y);
-  
+
   draw_slider(win->cr,
               win->cabinetSlider.value,
               win->cabinetSlider.base_x,
               win->cabinetSlider.base_y);
-  
+
   draw_dial(win->cr,
             win->image2,
             win->driveDial.value,
@@ -500,7 +501,7 @@ static void win_draw(win_t *win)
             win->mastergainDial.value,
             win->mastergainDial.base_x,
             win->mastergainDial.base_y);
-        
+
   cairo_pop_group_to_source (win->cr);
   cairo_paint (win->cr);
 }
@@ -513,31 +514,33 @@ static void port_event(LV2UI_Handle ui,
                         const void * buffer)
 {
   win_t *win = (win_t *)ui;
-  
+
   // Atom event received
   if (format == win->uris.atom_eventTransfer)
   {
     const LV2_Atom* atom = (const LV2_Atom*)buffer;
-    
+
     if (lv2_atom_forge_is_object_type(&win->forge, atom->type))
     {
       const LV2_Atom_Object* obj = (const LV2_Atom_Object*)atom;
-      if (obj->body.otype == win->uris.patch_Set) 
+      if (obj->body.otype == win->uris.patch_Set)
       {
         // Received patch_Set message
         const LV2_Atom* property = NULL;
         lv2_atom_object_get(obj, win->uris.patch_property, &property, 0);
-        
+
         if (((const LV2_Atom_URID*)property)->body == win->uris.profile)
         {
           const LV2_Atom* value = NULL;
-            
+
           lv2_atom_object_get(obj, win->uris.patch_value, &value, 0);
-            
+
           if (value->type == win->uris.atom_Path)
           {
             // Received new profile path
-            strcpy(win->profile_path, (const char*)LV2_ATOM_BODY_CONST(value));
+            strncpy(win->profile_path, (const char*)LV2_ATOM_BODY_CONST(value),
+                sizeof(win->profile_path));
+            win->profile_path[sizeof(win->profile_path) - 1] = '\0';
           }
         }
       }
@@ -632,79 +635,88 @@ float value_to_db(int value, float range)
   return db;
 }
 
+static int set_pipe_flags(int fd)
+{
+  int flags = fcntl(fd, F_GETFL);
+  if (flags == -1)
+  {
+    fprintf(stderr, "fnctl F_GETFL failed: %s\n", strerror(errno));
+    return -1;
+  }
+  flags |= O_NONBLOCK;
+  if (fcntl(fd, F_SETFL, flags) == -1)
+  {
+    fprintf(stderr, "fnctl F_SETFL failed: %s\n", strerror(errno));
+    return -1;
+  }
+  return 0;
+}
+
 // Shows file select dialog and sends Atom message
 // to change profile.
-// Works in separate thread
-void * select_new_profile_file(void *p_win)
+static int select_new_profile_file(win_t *win)
 {
-  win_t *win = (win_t*)p_win;
-  
-  FILE *fp;
-            
-  char *zenity_command;
-  zenity_command = (char *)malloc(10000);
-  strcpy(zenity_command, "zenity --file-selection --title=\"Choose profile file\" --filename=");
-  strcat(zenity_command, win->profile_path);
-            
-  fp = popen(zenity_command, "r");
-  free(zenity_command);
-  if (fgets(win->profile_path, sizeof(win->profile_path)-1, fp) != NULL)
+  int pipes[2];
+  if (pipe(pipes) == -1)
   {
-    if (pclose(fp) == 0)
+    return -1;
+  }
+  for (int i = 0; i < 2; i++)
+  {
+    if (set_pipe_flags(pipes[i]) == -1)
     {
-      win->profile_path[strlen(win->profile_path) - 1] = 0;
-      
-      lv2_atom_forge_set_buffer(&win->forge, win->forge_buf, sizeof(win->forge_buf));
-      LV2_Atom_Forge_Frame frame;
-      LV2_Atom* msg = (LV2_Atom*)lv2_atom_forge_object(&win->forge,
-                                                      &frame,
-                                                      0,
-                                                      win->uris.patch_Set);
-                
-      lv2_atom_forge_key(&win->forge, win->uris.patch_property);
-      lv2_atom_forge_urid(&win->forge, win->uris.profile);
-      lv2_atom_forge_key(&win->forge, win->uris.patch_value);
-      lv2_atom_forge_path(&win->forge, win->profile_path, strlen(win->profile_path));
-                
-      lv2_atom_forge_pop(&win->forge, &frame);
+      return -1;
+    }
+  }
+  char filename_arg[PATH_MAX + 16];
+  snprintf(filename_arg, sizeof(filename_arg) - 1, "--filename=%s",
+      win->profile_path);
+  filename_arg[sizeof(filename_arg) - 1] = '\0';
 
-      win->write_function(win->controller, PORT_CONTROL, lv2_atom_total_size(msg),
-                          win->uris.atom_eventTransfer,
-                          msg);
-      
-      win->profile_select = false;
-      win_draw(win);
-    }
-    else
-    {
-      win->profile_select = false;
-      win_draw(win);
-    }
-  }
-  else 
+  win->profile_select_fd = pipes[0];
+  win->new_profile_path_len = 0;
+  pid_t pid = fork();
+  if (pid == 0)
   {
-    fclose(fp);
-    win->profile_select = false;
-    win_draw(win);
+    close(pipes[0]);
+    if (dup2(pipes[1], 1) == -1)
+    {
+      return -1;
+    }
+    if (execlp("zenity", "zenity", "--file-selection",
+          "--title=\"Choose profile file\"",
+          "--file-filter=*.tapf", filename_arg, NULL) == -1)
+    {
+      return -1;
+    }
   }
-  return NULL;
+  else if (pid > 0)
+  {
+    close(pipes[1]);
+  }
+  else
+  {
+    close(pipes[0]);
+    close(pipes[1]);
+    return -1;
+  }
+
+  return 0;
 }
 
 // Process X11 events
 static void
 win_handle_events(win_t *win)
 {
-  XEvent xev;
-
-  while (XPending(win->dpy) > 0) {
-    
-    XNextEvent(win->dpy, &xev);
-
-    switch(xev.type) {
-
-      case Expose: // the window must be redrawn
+  xcb_flush(win->connection);
+  xcb_generic_event_t *event;
+  while ((event = xcb_poll_for_event(win->connection)) != NULL)
+  {
+    switch(event->response_type & ~0x80)
+    {
+      case XCB_EXPOSE: // the window must be redrawn
       {
-        XExposeEvent *eev = &xev.xexpose;
+        xcb_expose_event_t *eev = (xcb_expose_event_t *) event;
 
         if (eev->count == 0)
         {
@@ -712,15 +724,15 @@ win_handle_events(win_t *win)
         }
       }
       break;
-      case ButtonPress: // Left mouse button pressed
+      case XCB_BUTTON_PRESS: // Left mouse button pressed
       {
-        XButtonPressedEvent *bev = &xev.xbutton;
-        if (bev->button == Button1)
+        xcb_button_press_event_t *bev = (xcb_button_press_event_t *) event;
+        if (bev->detail == XCB_BUTTON_INDEX_1)
         {
           // Save position
-          win->pos_x = bev->x;
-          win->pos_y = bev->y;
-                  
+          win->pos_x = bev->event_x;
+          win->pos_y = bev->event_y;
+
           // Find on which dial the button was pressed
           if (is_point_in_dial_area(win->pos_x, win->pos_y, &(win->driveDial)))
           {
@@ -759,13 +771,9 @@ win_handle_events(win_t *win)
           }
           else if (is_point_in_profile_area(win->pos_x, win->pos_y))
           {
-            win->profile_select = true;
+            select_new_profile_file(win);
             win->active_dial = -1;
             win_draw(win);
-            
-            //show_file_select_dialog(win);
-            pthread_t tid;
-            pthread_create(&tid, NULL, &select_new_profile_file, win);
           }
           else
           {
@@ -774,10 +782,10 @@ win_handle_events(win_t *win)
         }
       }
       break;
-      case MotionNotify: // Mouse move while left button is pressed
+      case XCB_MOTION_NOTIFY: // Mouse move while left button is pressed
       {
-        XMotionEvent *mev = &xev.xmotion;
-                
+        xcb_motion_notify_event_t *mev = (xcb_motion_notify_event_t *) event;
+
         if (win->active_dial != -1)
         {
           // Recalculate active Dial value and send new value to the
@@ -786,37 +794,37 @@ win_handle_events(win_t *win)
           {
             float value;
             case PORT_DRIVE:
-              win->driveDial.value = clamp(win->driveDial.start_value + win->pos_y - mev->y);
+              win->driveDial.value = clamp(win->driveDial.start_value + win->pos_y - mev->event_y);
               value = win->driveDial.value;
               win->write_function(win->controller,PORT_DRIVE,sizeof(float),0,&value);
             break;
             case PORT_BASS:
-              win->bassDial.value = clamp(win->bassDial.start_value + win->pos_y - mev->y);
+              win->bassDial.value = clamp(win->bassDial.start_value + win->pos_y - mev->event_y);
               value = value_to_db(win->bassDial.value, 10.0);
               win->write_function(win->controller,PORT_BASS,sizeof(float),0,&value);
             break;
             case PORT_MIDDLE:
-              win->middleDial.value = clamp(win->middleDial.start_value + win->pos_y - mev->y);
+              win->middleDial.value = clamp(win->middleDial.start_value + win->pos_y - mev->event_y);
               value = value_to_db(win->middleDial.value, 10.0);
               win->write_function(win->controller,PORT_MIDDLE,sizeof(float),0,&value);
             break;
             case PORT_TREBLE:
-              win->trebleDial.value = clamp(win->trebleDial.start_value + win->pos_y - mev->y);
+              win->trebleDial.value = clamp(win->trebleDial.start_value + win->pos_y - mev->event_y);
               value = value_to_db(win->trebleDial.value, 10.0);
               win->write_function(win->controller,PORT_TREBLE,sizeof(float),0,&value);
             break;
             case PORT_MASTERGAIN:
-              win->mastergainDial.value = clamp(win->mastergainDial.start_value + win->pos_y - mev->y);
+              win->mastergainDial.value = clamp(win->mastergainDial.start_value + win->pos_y - mev->event_y);
               value = win->mastergainDial.value;
               win->write_function(win->controller,PORT_MASTERGAIN,sizeof(float),0,&value);
             break;
             case PORT_VOLUME:
-              win->levelSlider.value = clamp(win->levelSlider.start_value - win->pos_x + mev->x);
+              win->levelSlider.value = clamp(win->levelSlider.start_value - win->pos_x + mev->event_x);
               value = win->levelSlider.value / 100.0;
               win->write_function(win->controller,PORT_VOLUME,sizeof(float),0,&value);
             break;
             case PORT_CABINET:
-              win->cabinetSlider.value = clamp(win->cabinetSlider.start_value - win->pos_x + mev->x);
+              win->cabinetSlider.value = clamp(win->cabinetSlider.start_value - win->pos_x + mev->event_x);
               value = win->cabinetSlider.value / 100.0;
               win->write_function(win->controller,PORT_CABINET,sizeof(float),0,&value);
           }
@@ -824,6 +832,63 @@ win_handle_events(win_t *win)
         }
       }
       break;
+    }
+    free(event);
+    xcb_flush(win->connection);
+  }
+  if (win->profile_select_fd != -1)
+  {
+    size_t avail = sizeof(win->new_profile_path) - 1;
+    for (;;)
+    {
+      ssize_t bytes = read(win->profile_select_fd,
+          win->new_profile_path + win->new_profile_path_len,
+          avail - win->new_profile_path_len);
+      if (bytes == 0)
+      {
+        close(win->profile_select_fd);
+        win->profile_select_fd = -1;
+
+        win->new_profile_path[win->new_profile_path_len - 1] = '\0';
+        strcpy(win->profile_path, win->new_profile_path);
+
+        lv2_atom_forge_set_buffer(&win->forge, win->forge_buf, sizeof(win->forge_buf));
+        LV2_Atom_Forge_Frame frame;
+        LV2_Atom* msg = (LV2_Atom*)lv2_atom_forge_object(&win->forge,
+                                                        &frame,
+                                                        0,
+                                                        win->uris.patch_Set);
+
+        lv2_atom_forge_key(&win->forge, win->uris.patch_property);
+        lv2_atom_forge_urid(&win->forge, win->uris.profile);
+        lv2_atom_forge_key(&win->forge, win->uris.patch_value);
+        lv2_atom_forge_path(&win->forge, win->profile_path, win->new_profile_path_len);
+
+        lv2_atom_forge_pop(&win->forge, &frame);
+
+        win->write_function(win->controller, PORT_CONTROL, lv2_atom_total_size(msg),
+                            win->uris.atom_eventTransfer,
+                            msg);
+        win_draw(win);
+        break;
+      }
+      else if (bytes == -1)
+      {
+        if (errno == EAGAIN || errno == EWOULDBLOCK)
+        {
+          break;
+        }
+        if (errno != EINTR)
+        {
+          close(win->profile_select_fd);
+          win->profile_select_fd = -1;
+          break;
+        }
+      }
+      else
+      {
+        win->new_profile_path_len += bytes;
+      }
     }
   }
 }
@@ -834,7 +899,7 @@ idle(LV2UI_Handle handle)
 {
   win_t *win = (win_t *)handle;
   win_handle_events(win);
-  
+
   return 0;
 }
 
@@ -845,14 +910,14 @@ static const LV2UI_Idle_Interface idle_iface = { idle };
 static const void*
 extension_data(const char* uri)
 {
-  if (!strcmp(uri, LV2_UI__idleInterface)) 
+  if (!strcmp(uri, LV2_UI__idleInterface))
   {
     return &idle_iface;
   }
   return NULL;
 }
 
-static const LV2UI_Descriptor descriptor = 
+static const LV2UI_Descriptor descriptor =
 {
   PLUGIN_URI "ui",
   instantiate,
@@ -865,7 +930,7 @@ LV2_SYMBOL_EXPORT
 const LV2UI_Descriptor*
 lv2ui_descriptor(uint32_t index)
 {
-  switch (index) 
+  switch (index)
   {
     case 0:
       return &descriptor;

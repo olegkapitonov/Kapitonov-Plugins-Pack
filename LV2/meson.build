@@ -30,7 +30,7 @@ foreach suffix, opts : plugins
   if srcs.length() > 0
     srcs += custom_target(dsp_target,
         input: dsp,
-        output: '@BASENAME@_dsp.ipp',
+        output: '@BASENAME@_dsp.h',
         command: [faust, '-o', '@OUTPUT@', '@INPUT@'])
   else
     objs += static_library(dsp_target,
@@ -52,7 +52,7 @@ foreach suffix, opts : plugins
       name / '@0@_ui.src/@0@_gui.c'.format(name),
       c_args: ['-DPLUGIN_URI="@0@"'.format(uri), '-DFAUST_UI=1'],
       name_prefix: '',
-      dependencies: [m_dep, thread_dep, x11, cairo],
+      dependencies: [m_dep, x11, xcb, xcb_aux, xcb_icccm, cairo],
       install: true,
       install_dir : get_option('lv2dir') / bundle)
   endif

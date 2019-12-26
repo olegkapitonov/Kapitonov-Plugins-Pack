@@ -22,17 +22,13 @@
 #include <map>
 #include <stdint.h>
 #include <sys/stat.h>
-
-#include <zita-resampler/resampler.h>
-#include <zita-convolver.h>
-
-#if ZITA_CONVOLVER_MAJOR_VERSION != 4
-#error "This program requires zita-convolver 4.x.x"
-#endif
+#include <unistd.h>
 
 #include <lv2/lv2plug.in/ns/ext/atom/util.h>
 #include <lv2/lv2plug.in/ns/ext/urid/urid.h>
 #include "lv2/lv2plug.in/ns/ext/atom/forge.h"
+#include "lv2/lv2plug.in/ns/ext/buf-size/buf-size.h"
+#include "lv2/lv2plug.in/ns/ext/options/options.h"
 #include "lv2/lv2plug.in/ns/ext/patch/patch.h"
 #include "lv2/lv2plug.in/ns/ext/worker/worker.h"
 #include "lv2/lv2plug.in/ns/ext/state/state.h"
@@ -44,6 +40,8 @@
 #include "faust-support.h"
 
 using namespace std;
+
+#define DEFAULT_PROFILE "American Clean"
 
 // Defines for compatability with
 // FAUST generated code
@@ -80,45 +78,24 @@ using namespace std;
 
 #define OUTPUT_LEVEL profile->output_level
 
-// Zita-convolver parameters
-#define CONVPROC_SCHEDULER_PRIORITY 0
-#define CONVPROC_SCHEDULER_CLASS SCHED_FIFO
-#define THREAD_SYNC_MODE true
-
-#define fragm 64
-
 // LV2 port numbers
 enum {PORT_LOW, PORT_MIDDLE, PORT_HIGH, PORT_DRIVE, PORT_MASTERGAIN, PORT_VOLUME, PORT_CABINET,
     PORT_IN0, PORT_IN1, PORT_OUT0, PORT_OUT1, PORT_CONTROL, PORT_NOTIFY};
 
-// Holds current profile
-st_profile *profile;
-// Holds new loaded profile before swap with current profile
-st_profile *new_profile;
-
-// Global variables to send current
-// profile name to second plugin instance,
-// which will be created by Ardour
-// to frequency response analysis.
-// It's dirty, it needs to be rewritten somehow.
-char current_profile_file[10000];
-bool profile_loaded_before = false;
-
 // FAUST generated code
-#include "kpp_tubeamp_dsp.ipp"
 #include "plugin.h"
 
 // Check *.tapf file signature
 int check_profile_file(const char *path)
 {
   int status = 0;
-  
+
   FILE * profile_file = fopen(path, "rb");
 
-  if (profile_file != NULL) 
+  if (profile_file != NULL)
   {
-    st_profile check_profile;
-    if (fread(&check_profile, sizeof(st_profile), 1, profile_file) == 1)
+    st_profile_header check_profile;
+    if (fread(&check_profile, sizeof(st_profile_header), 1, profile_file) == 1)
     {
       if (!strncmp(check_profile.signature, "TaPf", 4))
       {
@@ -126,10 +103,10 @@ int check_profile_file(const char *path)
       }
     }
     else status = 1;
-    
+
     fclose(profile_file);
   }
-  
+
   return status;
 }
 
@@ -142,6 +119,7 @@ instantiate(const LV2_Descriptor*     descriptor,
             const LV2_Feature* const* features)
 {
   stPlugin* plugin = new stPlugin((int)rate);
+  const LV2_Options_Option* options = NULL;
   // Scan host features for URID map.
   for (int i = 0; features[i]; i++)
   {
@@ -149,11 +127,15 @@ instantiate(const LV2_Descriptor*     descriptor,
     {
       plugin->map = (LV2_URID_Map*)features[i]->data;
     }
-    if (!strcmp(features[i]->URI, LV2_URID_URI "#unmap"))
+    else if (!strcmp(features[i]->URI, LV2_URID_URI "#unmap"))
     {
       plugin->unmap = (LV2_URID_Unmap*)features[i]->data;
     }
-    if (!strcmp(features[i]->URI, LV2_WORKER__schedule))
+    else if (!strcmp(features[i]->URI, LV2_OPTIONS__options))
+    {
+      options = (const LV2_Options_Option*) features[i]->data;
+    }
+    else if (!strcmp(features[i]->URI, LV2_WORKER__schedule))
     {
       plugin->schedule = (LV2_Worker_Schedule*)features[i]->data;
     }
@@ -170,7 +152,19 @@ instantiate(const LV2_Descriptor*     descriptor,
     delete plugin;
     return 0;
   }
-  
+
+  int32_t bufsize = 8192;
+  LV2_URID bufsz_max = plugin->map->map(plugin->map->handle, LV2_BUF_SIZE__maxBlockLength);
+  LV2_URID atom_Int = plugin->map->map(plugin->map->handle, LV2_ATOM__Int);
+  for (const LV2_Options_Option* opt = options; opt->key; opt++)
+  {
+    if (opt->context == LV2_OPTIONS_INSTANCE
+        && opt->key == bufsz_max && opt->type == atom_Int) {
+      bufsize = *(const int32_t*) opt->value;
+    }
+  }
+  plugin->set_bufsize(bufsize);
+
   plugin->uris.patch_Set = plugin->map->map(plugin->map->handle, LV2_PATCH__Set);
   plugin->uris.patch_Get = plugin->map->map(plugin->map->handle, LV2_PATCH__Get);
   plugin->uris.patch_property = plugin->map->map(plugin->map->handle, LV2_PATCH__property);
@@ -178,46 +172,10 @@ instantiate(const LV2_Descriptor*     descriptor,
   plugin->uris.atom_Path = plugin->map->map(plugin->map->handle, LV2_ATOM__Path);
   plugin->uris.profile = plugin->map->map(plugin->map->handle, "https://faustlv2.bitbucket.io/kpp_tubeamp#profile");
   plugin->uris.freeSample = plugin->map->map(plugin->map->handle, "https://faustlv2.bitbucket.io/kpp_tubeamp#freeSample");
-  
+
   lv2_atom_forge_init(&plugin->forge, plugin->map);
-  
-  char *name_and_path = new char[10000];
-  strcpy(name_and_path,bundle_path);
-  strcat(name_and_path,"/profiles/American Clean.tapf");
-  
-  if (check_profile_file(name_and_path))
-  {
-    // Some hosts, like Ardour create second
-    // instance of the plugin for frequency
-    // response analysis. But Ardour does not
-    // send our profile parameters of main plugin instance
-    // to second "analysis" plugin instance.
-    // So we need to do it by this dirty hack,
-    // send current profile name
-    // through global string buffer.
-    if (!profile_loaded_before)
-    {
-      plugin->load_profile(name_and_path, plugin->profile_file,
-                           rate, &profile, false);
 
-      strcpy(current_profile_file, plugin->profile_file);
-    }
-    else
-    {
-      plugin->load_profile(current_profile_file, plugin->profile_file,
-                           rate, &new_profile, false);
-    }
-    delete name_and_path;
-
-  }
-  else 
-  {
-    delete plugin;
-    delete name_and_path;
-    return 0;
-  }
-  
-  profile_loaded_before = true;
+  plugin->bundle_path = bundle_path;
 
   return (LV2_Handle)plugin;
 }
@@ -241,37 +199,42 @@ work(LV2_Handle                  instance,
   stPlugin* plugin = (stPlugin*)instance;
   const LV2_Atom* atom = (const LV2_Atom*)data;
   const char *path = NULL;
-  
+
   if (atom->type == plugin->uris.freeSample)
   {
     // Free old profile
     stProfileMessage *msg = (stProfileMessage *)data;
-    delete msg->profile;
-    delete msg->preamp_convproc;
-    delete msg->convproc;
+    std::lock_guard<std::mutex> lock(plugin->profile_free_mutex);
+    delete msg->body.profile;
   }
   else if (atom->type == plugin->forge.Object)
   {
     // Load new profile
     const LV2_Atom* value = NULL;
     lv2_atom_object_get((const LV2_Atom_Object*)atom, plugin->uris.patch_value, &value, 0);
-            
+
     path = (const char*)LV2_ATOM_BODY_CONST(value);
-    
-    if (!path) 
+
+    if (!path)
     {
       fprintf(stderr,"Error in path while loading profile!\n");
       return LV2_WORKER_ERR_UNKNOWN;
     }
-    
+
     if (check_profile_file(path))
     {
-      plugin->load_profile(path, plugin->profile_file,
-                           plugin->rate, &new_profile, true);
+      stProfile *profile = stPlugin::load_profile(path, plugin->rate);
+      if (!profile)
+      {
+        fprintf(stderr,"Error while loading profile!\n");
+        return LV2_WORKER_ERR_UNKNOWN;
+      }
+      stProfileMessage msg = {
+        { sizeof(stProfileMessageBody), plugin->uris.patch_value },
+        { profile }
+      };
 
-      strcpy(current_profile_file, plugin->profile_file);
-
-      respond(handle, lv2_atom_total_size((LV2_Atom*)data), (LV2_Atom*)data);
+      respond(handle, lv2_atom_total_size((LV2_Atom*)&msg), (LV2_Atom*)&msg);
     }
   }
 
@@ -285,19 +248,22 @@ work_response(LV2_Handle  instance,
               const void* data)
 {
   stPlugin* plugin = (stPlugin*)instance;
-  
+
   // Schedule work to free the old profile
-	stProfileMessage msg = { { sizeof(st_profile*), plugin->uris.freeSample },
-	                      profile, plugin->preamp_convproc,
-                        plugin->convproc };
-        
+  stProfileMessage freemsg = {
+    { sizeof(stProfileMessageBody), plugin->uris.freeSample },
+    { plugin->profile }
+  };
+
   // Swap old and new profile structures
-  profile = new_profile;
-  plugin->preamp_convproc = plugin->new_preamp_convproc;
-  plugin->convproc = plugin->new_convproc;
+  stProfileMessage *msg = (stProfileMessage *)data;
+  plugin->profile = msg->body.profile;
+  plugin->dsp->profile = &msg->body.profile->header;
+  plugin->convproc = &msg->body.profile->convproc;
+  plugin->preamp_convproc = &msg->body.profile->preamp_convproc;
   // Schedule deleting of old profile structures
-	plugin->schedule->schedule_work(plugin->schedule->handle, sizeof(msg), &msg);
-  
+  plugin->schedule->schedule_work(plugin->schedule->handle, sizeof(freemsg), &freemsg);
+
   return LV2_WORKER_SUCCESS;
 }
 
@@ -355,32 +321,32 @@ run(LV2_Handle instance, uint32_t n_samples)
   stPlugin* plugin = (stPlugin*)instance;
   // Process audio.
   plugin->process_audio(n_samples);
-  
+
   const uint32_t notify_capacity = plugin->dsp->ports.notify->atom.size;
-	lv2_atom_forge_set_buffer(&plugin->forge,
-	                          (uint8_t*)plugin->dsp->ports.notify,
-	                          notify_capacity);
-  
+  lv2_atom_forge_set_buffer(&plugin->forge,
+                            (uint8_t*)plugin->dsp->ports.notify,
+                            notify_capacity);
+
   lv2_atom_forge_sequence_head(&plugin->forge, &plugin->notify_frame, 0);
-  
+
   // Read Atom messages
   LV2_ATOM_SEQUENCE_FOREACH(plugin->dsp->ports.control, ev)
   {
     const LV2_Atom_Object* obj = (const LV2_Atom_Object*)&ev->body;
-    
+
     if (obj->body.otype == plugin->uris.patch_Set)
     {
         // Received patch_Set message
         const LV2_Atom* property = NULL;
         lv2_atom_object_get(obj, plugin->uris.patch_property, &property, 0);
-        
+
         if (((const LV2_Atom_URID*)property)->body == plugin->uris.profile)
         {
           // Received profile object
           const LV2_Atom* value = NULL;
-            
+
           lv2_atom_object_get(obj, plugin->uris.patch_value, &value, 0);
-            
+
           if (value->type == plugin->uris.atom_Path)
           {
             // Received object path, load new profile in worker
@@ -401,11 +367,19 @@ run(LV2_Handle instance, uint32_t n_samples)
       lv2_atom_forge_key(&plugin->forge, plugin->uris.patch_property);
       lv2_atom_forge_urid(&plugin->forge, plugin->uris.profile);
       lv2_atom_forge_key(&plugin->forge, plugin->uris.patch_value);
-      lv2_atom_forge_path(&plugin->forge, plugin->profile_file, strlen(plugin->profile_file));
+      if (plugin->profile)
+      {
+        lv2_atom_forge_path(&plugin->forge,
+            plugin->profile->path.data(), plugin->profile->path.size());
+      }
+      else
+      {
+        lv2_atom_forge_path(&plugin->forge, NULL, 0);
+      }
 
       lv2_atom_forge_pop(&plugin->forge, &frame);
     }
-    
+
   }
 }
 
@@ -432,32 +406,39 @@ save(LV2_Handle                instance,
      const LV2_Feature* const* features)
 {
   stPlugin* plugin = (stPlugin*)instance;
-  
+
   LV2_State_Map_Path* map_path = NULL;
-  
+
   for (int i = 0; features[i]; i++) {
     if (!strcmp(features[i]->URI, LV2_STATE__mapPath)) {
       map_path = (LV2_State_Map_Path*)features[i]->data;
     }
   }
-  
-	if (!map_path) {
-		return LV2_STATE_ERR_NO_FEATURE;
-	}
 
-	// Map absolute sample path to an abstract state path
-	char* apath = map_path->abstract_path(map_path->handle, plugin->profile_file);
+  if (!map_path) {
+    return LV2_STATE_ERR_NO_FEATURE;
+  }
 
-	// Store profile = abstract path
-	store(handle,
-	      plugin->uris.profile,
-	      apath,
-	      strlen(apath) + 1,
-	      plugin->uris.atom_Path,
-	      LV2_STATE_IS_POD | LV2_STATE_IS_PORTABLE);
+  // Map absolute sample path to an abstract state path
+  char *path = NULL;
+  {
+    std::lock_guard<std::mutex> lock(plugin->profile_free_mutex);
+    if (plugin->profile)
+    {
+      path = map_path->abstract_path(map_path->handle, plugin->profile->path.c_str());
+    }
+  }
 
-	free(apath);
-	return LV2_STATE_SUCCESS;
+  // Store profile = abstract path
+  store(handle,
+        plugin->uris.profile,
+        path,
+        path ? strlen(path) + 1 : 0,
+        plugin->uris.atom_Path,
+        LV2_STATE_IS_POD | LV2_STATE_IS_PORTABLE);
+
+  free(path);
+  return LV2_STATE_SUCCESS;
 }
 
 // Used to restore saved profile path
@@ -470,89 +451,61 @@ restore(LV2_Handle                  instance,
 {
   stPlugin* plugin = (stPlugin*)instance;
 
-	LV2_State_Map_Path*  paths    = NULL;
+  LV2_State_Map_Path*  paths    = NULL;
 
   for (int i = 0; features[i]; i++)
   {
-    if (!strcmp(features[i]->URI, LV2_STATE__mapPath)) 
+    if (!strcmp(features[i]->URI, LV2_STATE__mapPath))
     {
       paths = (LV2_State_Map_Path*)features[i]->data;
     }
   }
-  
+
   if (!paths)
   {
     fprintf(stderr, "%s: host doesn't support state:map_Path\n", PLUGIN_URI);
     return LV2_STATE_ERR_NO_FEATURE;
   }
 
-	// Get eg:sample from state
-	size_t      size;
-	uint32_t    type;
-	uint32_t    valflags;
-	const void* value = retrieve(handle, plugin->uris.profile,
-	                             &size, &type, &valflags);
-	if (!value)
+  // Get eg:sample from state
+  size_t      size;
+  uint32_t    type;
+  uint32_t    valflags;
+  const void* value = retrieve(handle, plugin->uris.profile,
+                               &size, &type, &valflags);
+  std::string path;
+  if (!value)
   {
-		return LV2_STATE_ERR_NO_PROPERTY;
-	}
-	else if (type != plugin->uris.atom_Path) 
+    path = plugin->bundle_path +  "/profiles/" DEFAULT_PROFILE ".tapf";
+  }
+  else if (type != plugin->uris.atom_Path)
   {
-		return LV2_STATE_ERR_BAD_TYPE;
-	}
-
-  // Map abstract state path to absolute path
-  const char* apath = (const char*)value;
-  char*       path  = paths->absolute_path(paths->handle, apath);
-
-  struct stat stat_buf;
-  
-  // Check if profile file is symlink
-  lstat(path, &stat_buf);
-  char *real_profile_file_name = new char[10000];
-  
-  // If so, dereference symlink
-  if (S_ISLNK(stat_buf.st_mode))
-  {
-    FILE *fp;
-    char *readlink_command = new char[10000];
-    strcpy(readlink_command, "readlink -f ");
-    strcat(readlink_command,"\"");
-    strcat(readlink_command, path);
-    strcat(readlink_command,"\"");
-    fp = popen(readlink_command, "r");
-
-    if (fgets(real_profile_file_name, 10000-1, fp) != NULL)
-    {
-      real_profile_file_name[strlen(real_profile_file_name) - 1] = 0;
-    }
-    else
-    {
-      strcpy(real_profile_file_name, path);
-    }
-    pclose(fp);
-    delete readlink_command;
+    return LV2_STATE_ERR_BAD_TYPE;
   }
   else
   {
-    strcpy(real_profile_file_name, path);
+    char *abspath = paths->absolute_path(paths->handle, (const char *) value);
+    path = abspath;
+    free(abspath);
   }
-  
-  if (check_profile_file(real_profile_file_name))
+
+  // Map abstract state path to absolute path
+
+  if (check_profile_file(path.c_str()))
   {
     // Send Atom message to load this profile
     LV2_Atom_Forge forge;
-    LV2_Atom*      buf = (LV2_Atom*)calloc(1, strlen(real_profile_file_name) + 128);
+    LV2_Atom*      buf = (LV2_Atom*)calloc(1, path.size() + 128);
     lv2_atom_forge_init(&forge, plugin->map);
     lv2_atom_forge_set_sink(&forge, atom_sink, atom_sink_deref, buf);
-    
+
     LV2_Atom_Forge_Frame frame;
     lv2_atom_forge_object(&forge, &frame, 0, plugin->uris.patch_Set);
 
     lv2_atom_forge_key(&forge, plugin->uris.patch_property);
     lv2_atom_forge_urid(&forge, plugin->uris.profile);
     lv2_atom_forge_key(&forge, plugin->uris.patch_value);
-    lv2_atom_forge_path(&forge, real_profile_file_name, strlen(real_profile_file_name));
+    lv2_atom_forge_path(&forge, path.data(), path.size());
 
     lv2_atom_forge_pop(&forge, &frame);
 
@@ -561,10 +514,7 @@ restore(LV2_Handle                  instance,
     free(buf);
   }
 
-  free(path);
-  delete real_profile_file_name;
-
-	return LV2_STATE_SUCCESS;
+  return LV2_STATE_SUCCESS;
 }
 
 
@@ -572,15 +522,15 @@ const void*
 extension_data(const char* uri)
 {
   static const LV2_State_Interface  state  = { save, restore };
-	static const LV2_Worker_Interface worker = { work, work_response, NULL };
-	if (!strcmp(uri, LV2_STATE__interface)) 
+  static const LV2_Worker_Interface worker = { work, work_response, NULL };
+  if (!strcmp(uri, LV2_STATE__interface))
   {
-		return &state;
-	}
-	else if (!strcmp(uri, LV2_WORKER__interface))
+    return &state;
+  }
+  else if (!strcmp(uri, LV2_WORKER__interface))
   {
-		return &worker;
-	}
+    return &worker;
+  }
   return NULL;
 }
 
