@@ -102,6 +102,7 @@ typedef struct
   xcb_visualtype_t *visual;
 
   cairo_surface_t *image,*image2;
+  cairo_device_t *device;
 
   // Port number (from enum) of the Dial, which is now
   // adjusted by the user
@@ -109,6 +110,7 @@ typedef struct
   int active_dial;
 
 } win_t;
+
 // Create main window
 static void win_init(win_t *win, xcb_screen_t *screen,
     xcb_window_t parentXwindow)
@@ -232,6 +234,9 @@ instantiate(const struct _LV2UI_Descriptor * descriptor,
   xcb_clear_area(win->connection, 0, win->win, 0, 0, 0, 0);
   win->surface = cairo_xcb_surface_create(win->connection, win->win, win->visual,
                                         win->width, win->height);
+
+  win->device = cairo_device_reference(cairo_surface_get_device(win->surface));
+
   win->cr = cairo_create(win->surface);
 
   char image_path[PATH_MAX];
@@ -276,6 +281,8 @@ cleanup(LV2UI_Handle ui)
   cairo_surface_destroy(win->surface);
   cairo_surface_destroy(win->image);
   cairo_surface_destroy(win->image2);
+  cairo_device_finish(win->device);
+  cairo_device_destroy(win->device);
   xcb_disconnect(win->connection);
   free(win);
 }
