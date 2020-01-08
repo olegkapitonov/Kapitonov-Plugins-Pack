@@ -279,7 +279,7 @@ struct stPlugin {
 
             resampl.process();
 
-            preamp_impulse.resize(ratio);
+            preamp_impulse.resize(preamp_impheader.sample_count * ratio);
             for (uint i = 0; i < (uint)(preamp_impheader.sample_count*ratio); i++)
             {
               preamp_impulse[i] = preamp_out[i] / ratio;
