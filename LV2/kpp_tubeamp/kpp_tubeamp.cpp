@@ -17,6 +17,7 @@
  * --------------------------------------------------------------------------
  */
 
+#include <limits.h>
 #include <string.h>
 #include <math.h>
 #include <map>
@@ -506,6 +507,32 @@ restore(LV2_Handle                  instance,
     free(abspath);
   }
 
+  // We should obtain real file path, not symlink
+  // which Ardour creates in project directory,
+  // because user wants to see real profile files
+  // in LV2 bundle, not symlinks in Ardour project
+
+  // Check if profile file is symlink
+  struct stat stat_buf;
+  lstat(path.c_str(), &stat_buf);
+
+  // If so, dereference symlink
+  if (S_ISLNK(stat_buf.st_mode))
+  {
+    std::vector<char> real_profile_file_name(PATH_MAX);
+    FILE *fp;
+    std::string readlink_command;
+
+    readlink_command = "readlink -f \"" + path + "\"" + "\0";
+    fp = popen(readlink_command.c_str(), "r");
+
+    if (fgets(real_profile_file_name.data(), PATH_MAX - 1, fp) != NULL)
+    {
+      real_profile_file_name[strlen(real_profile_file_name.data()) - 1] = '\0';
+      path = real_profile_file_name.data();
+    }
+    pclose(fp);
+  }
 
   if (check_profile_file(path.c_str()))
   {
