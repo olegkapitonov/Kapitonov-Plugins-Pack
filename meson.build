@@ -1,5 +1,5 @@
-project('kpp', 'cpp', 'c', license: 'GPL-3.0-or-later', version: '1.0',
-  default_options : ['buildtype=debugoptimized'])
+project('kpp', 'cpp', 'c', license: 'GPL-3.0-or-later', version: '1.1',
+  default_options : ['buildtype=release'])
 
 cc = meson.get_compiler('cpp')
 m_dep = cc.find_library('m', required : false)
