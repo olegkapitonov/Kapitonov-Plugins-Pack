@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Oleg Kapitonov
+ * Copyright (C) 2018-2020 Oleg Kapitonov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
