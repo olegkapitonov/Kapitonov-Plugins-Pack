@@ -36,34 +36,37 @@ declare author "Oleg Kapitonov";
 declare license "GPLv3";
 declare version "1.0";
 
-import("stdfaust.lib"); 
+import("stdfaust.lib");
 
 process = output with {
-    
+
     // Bypass button, 0 - pedal on, 1 -pedal off (bypass on)
     bypass = checkbox("99_bypass");
-          
+
     level_d1 = ba.db2linear(-20 + vslider("octave1",0,0,30,0.01));
     level_d2 = ba.db2linear(-20 + vslider("octave2",0,0,30,0.01));
     level_dry = ba.db2linear(-30 + vslider("dry",30,0,30,0.01));
-    
+    cutoff_freq = vslider("cutoff frequency",160,100,200,0.1);
+
     // Extract 1-st harmonics
-    pre_filter = fi.dcblocker : fi.lowpass(5, 320): fi.lowpass(3, 80): fi.highpass(2, 70);
+    pre_filter = fi.dcblocker : fi.lowpass(3, 80) : fi.peak_eq(30, 100, 80) :
+      fi.peak_eq(20, 440, 200);
 
     // Convert to squire form (Shmitt trigger)
-    distortion = (+ : ma.signum : max(-0.00001) : min(-0.00001)) ~ _;
+    distortion = (+ : co.compressor_mono(100, -80, 0.1, 0.1) :
+      ma.signum : max(-0.0000001) : min(0.0000001)) ~ _;
     octaver = distortion : fi.zero(1) : max(0.0) : ma.signum : *(-2.0) : +(1.0) :
-    (* : +(0.1) : *(10000.0) : max(-1.0) : min(1.0)) ~ _ :
-    max(0.0) : min(1.0); 
+      (* : +(0.1) : *(10000.0) : max(-1.0) : min(1.0)) ~ _ :
+      max(0.0) : min(1.0);
 
     // Divide 1-st harmonics by 2 - 1 octave below
-    down1 = _ <: _,(pre_filter : octaver) : * :
-      fi.lowpass(3, 240);
-      
+    down1 = _ <: fi.highpass(1,260) ,(pre_filter : octaver) : * :
+      fi.lowpass(3, cutoff_freq) : fi.highpass(3, 40) : fi.highpass(1, 80);
+
     // Divide by 4 - 2 octaves below
-    down2 = _ <: _,(pre_filter : octaver) : * <: _,(pre_filter : octaver) : * :
-      fi.lowpass(3, 120);
-    
+    down2 = _ <: fi.highpass(5,240) ,(pre_filter : octaver : -(0.5) : octaver) : * :
+      fi.lowpass(3, cutoff_freq / 2.0);
+
     // Modulate input signal
     stomp =  _ <: down1,down2 : *(level_d1),*(level_d2) :
       + : *(2.0) : fi.dcblocker;
