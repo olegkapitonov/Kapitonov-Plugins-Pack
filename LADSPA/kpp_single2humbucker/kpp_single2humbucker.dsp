@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Oleg Kapitonov
+ * Copyright (C) 2018-2020 Oleg Kapitonov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@
 declare name "kpp_single2humbucker";
 declare author "Oleg Kapitonov";
 declare license "GPLv3";
-declare version "1.0";
+declare version "1.1";
 
 import("stdfaust.lib"); 
 
