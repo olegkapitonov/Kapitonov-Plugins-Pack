@@ -856,7 +856,7 @@ win_handle_events(win_t *win)
         win->profile_select_fd = -1;
 
         win->new_profile_path[win->new_profile_path_len - 1] = '\0';
-        strcpy(win->profile_path, win->new_profile_path);
+        strncpy(win->profile_path, win->new_profile_path, win->new_profile_path_len);
 
         lv2_atom_forge_set_buffer(&win->forge, win->forge_buf, sizeof(win->forge_buf));
         LV2_Atom_Forge_Frame frame;
