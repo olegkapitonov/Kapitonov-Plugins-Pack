@@ -1,7 +1,7 @@
 Kapitonov Plugins Pack (KPP)
 ============================
 
-Last release is 1.0.
+Last release is 1.1.
 
 > Set of plugins for guitar sound processing.
 > Compatible with hosts such as Ardour, Qtractor, Carla, 
@@ -76,26 +76,12 @@ and adjust the signal level.
 5. Zita-resampler 1.6 development files.
 6. Zita-convolver 4.0 development files.
 7. LV2 or LADSPA development files.
-9. Faust 2.x (or 0.9.x) compiler and libraries, for generating code from
-   DSP source files.
+8. Faust 2.x compiler and libraries.
 
 
 ### How to build and install
 
-For 1.0 release version:
-
-1. Each plugin source code folder contains `build.sh` shell script.
-   Run it.
-2. LV2 plugin bundle will be in `plugin_name.lv2` folder inside
-   the plugin source code folder. LADSPA .so file will be in the
-   plugin source code folder.
-3. Copy LV2 bundle or LADSPA .so file to the proper place in your system,
-   which is in the plugins PATH for your host application. Usually it is
-   `/usr/lib/lv2` for LV2 plugins and `/usr/lib/ladspa` for LADSPA plugins.
-4. Launch host application (e. g. Ardour). Find desired plugin 
-   in the library. Names will have `kpp_` prefix.
- 
-For the version from master branch (thanks to [brummer10](https://github.com/brummer10)):
+Project now uses meson build system (thanks to [cyclopsian](https://github.com/cyclopsian))
 
 1. Run `meson build` and then `ninja -C build` in the source directory.
 2. Run `ninja -C build install` to install to /usr/lib/ladspa and /usr/lib/lv2.
@@ -104,14 +90,18 @@ For the version from master branch (thanks to [brummer10](https://github.com/bru
   `ninja -C build install`.
 3. Launch host application (e. g. Ardour). Find desired plugin 
    in the library. Names will have `kpp_` prefix.
+4. If your distribution has old versions of zita-resampler and zita-convolver,
+   use 'thirdparty-included' branch instead of 'master'.
 
 
 ### How to install binary versions
 
-1. Copy LV2 bundle or LADSPA .so file to the proper place in your system,
+1. For Debian Buster (10) download KPP-1.1-binary-debian10.tar.bz2.
+2. For Ubuntu LTS and other distributions download KPP-1.1-binary-ubuntu-bionic.tar.bz2.
+3. Copy LV2 bundle or LADSPA .so file to the proper place in your system,
    which is in the plugins PATH for your host application. Usually it is
    `/usr/lib/lv2` for LV2 plugins and `/usr/lib/ladspa` for LADSPA plugins.
-2. Launch host application (e. g. Ardour). Find desired plugin in library,
+4. Launch host application (e. g. Ardour). Find desired plugin in library,
    names will have `kpp_` prefix.
 
 ### Quick start guide
