@@ -23,13 +23,6 @@
 
 #include <map>
 
-#include <zita-resampler/resampler.h>
-#include <zita-convolver.h>
-
-#if ZITA_CONVOLVER_MAJOR_VERSION != 4
-#error "This program requires zita-convolver 4.x.x"
-#endif
-
 #include <lv2/lv2plug.in/ns/ext/urid/urid.h>
 #include "lv2/lv2plug.in/ns/ext/atom/forge.h"
 

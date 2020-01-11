@@ -25,6 +25,11 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "thirdparty/zita-resampler/resampler.h"
+#include "thirdparty/zita-resampler/resampler.cc"
+#include "thirdparty/zita-convolver/zita-convolver.h"
+#include "thirdparty/zita-convolver/zita-convolver.cc"
+
 #include <lv2/lv2plug.in/ns/ext/atom/util.h>
 #include <lv2/lv2plug.in/ns/ext/urid/urid.h>
 #include "lv2/lv2plug.in/ns/ext/atom/forge.h"

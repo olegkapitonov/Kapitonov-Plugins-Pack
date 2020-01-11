@@ -1,0 +1,59 @@
+**************************
+*  zita-convolver 4.0.0  *
+*  Released 2018-06-06   *
+**************************
+
+API changes between 3.x.x and  4.x.x
+------------------------------------
+
+1. Version 4 now uses int types from <stdint.h>
+   internally and for the arguments of all member
+   funcions.
+
+2. The set_density() function has been removed, and the
+   matrix density hint is now an additional argument to
+   configure().
+
+If your application does not use impdata_update(),
+then (1) and (2) are the only relevant changes.
+
+3. The way impdata_update() works has changed.
+
+This function is used to modify IR data while the convolver
+is actually running. It does not use any memory allocation
+nor modify internal data structures, and only data in already
+existing partitions can be modified this way.
+In versions <= 3, this function would *overwrite* any existing
+data. From version 4, impdata_update() *adds* to existing IR
+data, just as impdata_create() does. So in order to replace an
+existing IR, you first need to clear it using the new function
+impdata_clear(). This will clear (but not delete) all IR data
+for a given input, output pair.
+
+
+Version test macro and function
+-------------------------------
+
+If your application depends on this version of zita-convolver,
+insert the following two code fragments, normally in your main
+program source file:
+
+This will test for zita-convolver-4.x.x at compile time.
+-----
+#include <zita-convolver.h>
+
+#if ZITA_CONVOLVER_MAJOR_VERSION != 4
+#error "This program requires zita-convolver 4.x.x"
+#endif
+-----
+
+This will check that the compile time and run time libraries
+are compatible.
+-----
+if (zita_convolver_major_version () != ZITA_CONVOLVER_MAJOR_VERSION)
+{
+    fprintf (stderr, "Zita-convolver version does not match.\n");
+    return 1;
+}
+-----
+

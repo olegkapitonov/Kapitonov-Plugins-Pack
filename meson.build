@@ -40,7 +40,7 @@ plugins = {
   }, 'tubeamp': {
     'gui': true,
     'lv2src': ['kpp_tubeamp.cpp'],
-    'libs': ['zita-convolver', 'zita-resampler']
+    'libs' : ['fftw3f', 'pthread']
   },
 }
 
