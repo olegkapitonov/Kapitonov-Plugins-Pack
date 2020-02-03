@@ -86,7 +86,7 @@ Project now uses meson build system (thanks to [cyclopsian](https://github.com/c
 1. Run `meson build` and then `ninja -C build` in the source directory.
 2. Run `ninja -C build install` to install to /usr/lib/ladspa and /usr/lib/lv2.
    To install to your user directory, run
-  `meson build --reconfigure -Dladspadir=~/.ladspa -Dlv2dir=~/.lv2` and then
+  `meson build --reconfigure -Dladspadir=.ladspa -Dlv2dir=.lv2 --prefix $HOME` and then
   `ninja -C build install`.
 3. Launch host application (e. g. Ardour). Find desired plugin 
    in the library. Names will have `kpp_` prefix.
