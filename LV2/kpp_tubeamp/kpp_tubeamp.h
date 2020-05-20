@@ -22,6 +22,7 @@
 #define KPP_TUBEAMP_H
 
 #include <map>
+#include <string>
 
 #include <zita-resampler/resampler.h>
 #include <zita-convolver.h>
@@ -53,7 +54,7 @@
 
 // Structure holds pointers
 // to LV2 plugin ports
-struct stPorts 
+struct stPorts
 {
     float *volume;
     float *drive;
