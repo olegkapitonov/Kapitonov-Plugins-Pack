@@ -546,7 +546,7 @@ extension_data(const char* uri)
 static const LV2UI_Descriptor descriptor =
 {
   PLUGIN_URI "ui",
-  instantiate,
+  (void* (*)(const LV2UI_Descriptor*, const char*, const char*, void (*)(void*, unsigned int, unsigned int, unsigned int, const void*), void*, void**, const LV2_Feature* const*))instantiate,
   cleanup,
   port_event,
   extension_data

@@ -49,8 +49,8 @@ foreach suffix, opts : plugins
 
   if xcb.found() and cairo.found() and opts.get('gui', false)
     shared_library('@0@ui'.format(name),
-      name / '@0@_ui.src/@0@_gui.c'.format(name),
-      c_args: ['-DPLUGIN_URI="@0@"'.format(uri), '-DFAUST_UI=1'],
+      name / '@0@_ui.src/@0@_gui.cpp'.format(name),
+      cpp_args: ['-DPLUGIN_URI="@0@"'.format(uri), '-DFAUST_UI=1'],
       name_prefix: '',
       dependencies: [m_dep, xcb, xcb_aux, xcb_icccm, cairo],
       install: true,
