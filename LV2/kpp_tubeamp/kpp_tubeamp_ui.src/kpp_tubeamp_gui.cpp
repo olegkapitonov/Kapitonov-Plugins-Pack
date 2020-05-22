@@ -42,6 +42,8 @@
 #include <xcb/xcb_aux.h>
 #include <xcb/xcb_icccm.h>
 
+#include "kpp_file_picker.h"
+
 // Port numbers for communication with the main LV2 plugin module
 enum {PORT_BASS, PORT_MIDDLE, PORT_TREBLE, PORT_DRIVE, PORT_MASTERGAIN, PORT_VOLUME,
   PORT_CABINET, PORT_IN0, PORT_IN1, PORT_OUT0, PORT_OUT1, PORT_CONTROL, PORT_NOTIFY};
@@ -150,12 +152,15 @@ typedef struct
   char new_profile_path[PATH_MAX];
   size_t new_profile_path_len;
 
+  KPPFilePicker::Win *fp_win;
+
 } win_t;
 
 // Create main window
 static void win_init(win_t *win, xcb_screen_t *screen,
     xcb_window_t parentXwindow)
 {
+  win->fp_win = NULL;
   win->width = 1000;
   win->height = 376;
 
@@ -169,9 +174,10 @@ static void win_init(win_t *win, xcb_screen_t *screen,
     XCB_EVENT_MASK_BUTTON_1_MOTION };
 
   xcb_create_window(win->connection, XCB_COPY_FROM_PARENT,
-      win->win, parentXwindow,
-      0, 0, win->width, win->height, 0, XCB_WINDOW_CLASS_INPUT_OUTPUT,
-      screen->root_visual, mask, mask_values);
+                    win->win, parentXwindow,
+                    0, 0, win->width, win->height, 0, XCB_WINDOW_CLASS_COPY_FROM_PARENT,
+                    XCB_COPY_FROM_PARENT, mask, mask_values);
+
 
   xcb_size_hints_t size_hints;
   memset(&size_hints, 0, sizeof(size_hints));
@@ -316,7 +322,8 @@ instantiate(const struct _LV2UI_Descriptor * descriptor,
   win->image2 = cairo_image_surface_create_from_png (image_path);
 
   // Return to host the X11 handle of created window
-  *widget = (void*) (size_t) win->win;
+  //*widget = (void*) (size_t) win->win;
+  *(uintptr_t *)widget = (uintptr_t)win->win;
 
   if (resize)
   {
@@ -346,6 +353,10 @@ instantiate(const struct _LV2UI_Descriptor * descriptor,
 
 static void win_deinit(win_t *win)
 {
+  if (win->fp_win != NULL)
+  {
+    delete win->fp_win;
+  }
   xcb_destroy_window(win->connection, win->win);
 }
 
@@ -463,7 +474,6 @@ static void win_draw(win_t *win)
   {
     profile_name[strlen(profile_name) - 5] = '\0';
     char *base = basename(profile_name);
-
     cairo_show_text(win->cr, base);
   }
 
@@ -640,71 +650,23 @@ float value_to_db(int value, float range)
   return db;
 }
 
-static int set_pipe_flags(int fd)
-{
-  int flags = fcntl(fd, F_GETFL);
-  if (flags == -1)
-  {
-    fprintf(stderr, "fnctl F_GETFL failed: %s\n", strerror(errno));
-    return -1;
-  }
-  flags |= O_NONBLOCK;
-  if (fcntl(fd, F_SETFL, flags) == -1)
-  {
-    fprintf(stderr, "fnctl F_SETFL failed: %s\n", strerror(errno));
-    return -1;
-  }
-  return 0;
-}
-
 // Shows file select dialog and sends Atom message
 // to change profile.
 static int select_new_profile_file(win_t *win)
 {
-  int pipes[2];
-  if (pipe(pipes) == -1)
+  if (win->fp_win != NULL)
   {
-    return -1;
+    delete win->fp_win;
+    win->fp_win = NULL;
   }
-  for (int i = 0; i < 2; i++)
-  {
-    if (set_pipe_flags(pipes[i]) == -1)
-    {
-      return -1;
-    }
-  }
-  char filename_arg[PATH_MAX + 16];
-  snprintf(filename_arg, sizeof(filename_arg) - 1, "--filename=%s",
-      win->profile_path);
-  filename_arg[sizeof(filename_arg) - 1] = '\0';
+  win->fp_win = new KPPFilePicker::Win();
+  win->fp_win->init();
 
-  win->profile_select_fd = pipes[0];
-  win->new_profile_path_len = 0;
-  pid_t pid = fork();
-  if (pid == 0)
-  {
-    close(pipes[0]);
-    if (dup2(pipes[1], 1) == -1)
-    {
-      return -1;
-    }
-    if (execlp("zenity", "zenity", "--file-selection",
-          "--title=\"Choose profile file\"",
-          "--file-filter=*.tapf", filename_arg, NULL) == -1)
-    {
-      return -1;
-    }
-  }
-  else if (pid > 0)
-  {
-    close(pipes[1]);
-  }
-  else
-  {
-    close(pipes[0]);
-    close(pipes[1]);
-    return -1;
-  }
+  std::string currentDir = win->profile_path;
+  currentDir = currentDir.substr(0, currentDir.find_last_of('/'));
+  win->fp_win->setTitle("Open *.tapf Profile File");
+  win->fp_win->list.showHidden = true;
+  win->fp_win->list.readDir(currentDir);
 
   return 0;
 }
@@ -713,6 +675,21 @@ static int select_new_profile_file(win_t *win)
 static void
 win_handle_events(win_t *win)
 {
+  if (win->fp_win != NULL)
+  {
+    if (win->fp_win->isInited)
+    {
+      xcb_flush(win->fp_win->connection);
+      xcb_generic_event_t *event;
+      while ((event = xcb_poll_for_event(win->fp_win->connection)) != NULL)
+      {
+        win->fp_win->handle_events(event);
+        free(event);
+      }
+      xcb_flush(win->fp_win->connection);
+    }
+  }
+
   xcb_flush(win->connection);
   xcb_generic_event_t *event;
   while ((event = xcb_poll_for_event(win->connection)) != NULL)
@@ -842,33 +819,26 @@ win_handle_events(win_t *win)
   }
   xcb_flush(win->connection);
 
-  if (win->profile_select_fd != -1)
+  if (win->fp_win != NULL)
   {
-    size_t avail = sizeof(win->new_profile_path) - 1;
-    for (;;)
+    if (win->fp_win->isInited)
     {
-      ssize_t bytes = read(win->profile_select_fd,
-          win->new_profile_path + win->new_profile_path_len,
-          avail - win->new_profile_path_len);
-      if (bytes == 0)
+      if (win->fp_win->isFilenameUpdated)
       {
-        close(win->profile_select_fd);
-        win->profile_select_fd = -1;
-
-        win->new_profile_path[win->new_profile_path_len - 1] = '\0';
-        strncpy(win->profile_path, win->new_profile_path, win->new_profile_path_len);
+        strncpy(win->profile_path, win->fp_win->newFileName.c_str(), win->fp_win->newFileName.size());
+        win->profile_path[win->fp_win->newFileName.size()] = '\0';
 
         lv2_atom_forge_set_buffer(&win->forge, win->forge_buf, sizeof(win->forge_buf));
         LV2_Atom_Forge_Frame frame;
         LV2_Atom* msg = (LV2_Atom*)lv2_atom_forge_object(&win->forge,
-                                                        &frame,
-                                                        0,
-                                                        win->uris.patch_Set);
+                                                         &frame,
+                                                         0,
+                                                         win->uris.patch_Set);
 
         lv2_atom_forge_key(&win->forge, win->uris.patch_property);
         lv2_atom_forge_urid(&win->forge, win->uris.profile);
         lv2_atom_forge_key(&win->forge, win->uris.patch_value);
-        lv2_atom_forge_path(&win->forge, win->profile_path, win->new_profile_path_len);
+        lv2_atom_forge_path(&win->forge, win->profile_path, win->fp_win->newFileName.size());
 
         lv2_atom_forge_pop(&win->forge, &frame);
 
@@ -876,24 +846,7 @@ win_handle_events(win_t *win)
                             win->uris.atom_eventTransfer,
                             msg);
         win_draw(win);
-        break;
-      }
-      else if (bytes == -1)
-      {
-        if (errno == EAGAIN || errno == EWOULDBLOCK)
-        {
-          break;
-        }
-        if (errno != EINTR)
-        {
-          close(win->profile_select_fd);
-          win->profile_select_fd = -1;
-          break;
-        }
-      }
-      else
-      {
-        win->new_profile_path_len += bytes;
+        win->fp_win->isFilenameUpdated = false;
       }
     }
   }
@@ -926,7 +879,7 @@ extension_data(const char* uri)
 static const LV2UI_Descriptor descriptor =
 {
   PLUGIN_URI "ui",
-  instantiate,
+  (void* (*)(const LV2UI_Descriptor*, const char*, const char*, void (*)(void*, unsigned int, unsigned int, unsigned int, const void*), void*, void**, const LV2_Feature* const*))instantiate,
   cleanup,
   port_event,
   extension_data
@@ -944,11 +897,3 @@ lv2ui_descriptor(uint32_t index)
       return NULL;
   }
 }
-
-
-
-
-
-
-
-

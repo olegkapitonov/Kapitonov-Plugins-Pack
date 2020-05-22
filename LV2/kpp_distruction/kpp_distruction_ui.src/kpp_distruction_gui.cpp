@@ -36,7 +36,7 @@
 #include <xcb/xcb_icccm.h>
 
 // Port numbers for communication with the main LV2 plugin module
-enum {PORT_BYPASS, PORT_FUZZ, PORT_TONE, PORT_VOLUME};
+enum {PORT_BYPASS, PORT_BASS, PORT_DRIVE, PORT_MIDDLE, PORT_TREBLE, PORT_VOICE, PORT_LEVEL};
 
 // Dial GUI element structure
 typedef struct
@@ -82,8 +82,11 @@ typedef struct
   //win_t win;
 
   // Dials
-  st_dial fuzzDial;
-  st_dial toneDial;
+  st_dial driveDial;
+  st_dial bassDial;
+  st_dial middleDial;
+  st_dial trebleDial;
+  st_dial voiceDial;
   st_dial volumeDial;
 
   // Holds state of bypass button
@@ -112,7 +115,7 @@ typedef struct
 static void win_init(win_t *win, xcb_screen_t *screen,
     xcb_window_t parentXwindow)
 {
-  win->width = 400;
+  win->width = 442;
   win->height = 600;
 
   win->win = xcb_generate_id(win->connection);
@@ -125,9 +128,9 @@ static void win_init(win_t *win, xcb_screen_t *screen,
     XCB_EVENT_MASK_BUTTON_1_MOTION };
 
   xcb_create_window(win->connection, XCB_COPY_FROM_PARENT,
-      win->win, parentXwindow,
-      0, 0, win->width, win->height, 0, XCB_WINDOW_CLASS_INPUT_OUTPUT,
-      screen->root_visual, mask, mask_values);
+                    win->win, parentXwindow,
+                    0, 0, win->width, win->height, 0, XCB_WINDOW_CLASS_COPY_FROM_PARENT,
+                    XCB_COPY_FROM_PARENT, mask, mask_values);
 
   xcb_size_hints_t size_hints;
   memset(&size_hints, 0, sizeof(size_hints));
@@ -164,20 +167,35 @@ instantiate(const struct _LV2UI_Descriptor * descriptor,
 
   win->active_dial = -1;
 
-  win->fuzzDial.value = 0;
-  win->fuzzDial.start_value = 0;
-  win->fuzzDial.base_x = 45;
-  win->fuzzDial.base_y = 106;
+  win->driveDial.value = 0;
+  win->driveDial.start_value = 0;
+  win->driveDial.base_x = 62;
+  win->driveDial.base_y = 86;
 
-  win->toneDial.value = 0;
-  win->toneDial.start_value = 0;
-  win->toneDial.base_x = 255;
-  win->toneDial.base_y = 106;
+  win->bassDial.value = 0;
+  win->bassDial.start_value = 0;
+  win->bassDial.base_x = 21;
+  win->bassDial.base_y = 450;
+
+  win->middleDial.value = 0;
+  win->middleDial.start_value = 0;
+  win->middleDial.base_x = 57;
+  win->middleDial.base_y = 304;
+
+  win->trebleDial.value = 0;
+  win->trebleDial.start_value = 0;
+  win->trebleDial.base_x = 174;
+  win->trebleDial.base_y = 220;
+
+  win->voiceDial.value = 0;
+  win->voiceDial.start_value = 0;
+  win->voiceDial.base_x = 314;
+  win->voiceDial.base_y = 215;
 
   win->volumeDial.value = 0;
   win->volumeDial.start_value = 0;
-  win->volumeDial.base_x = 151;
-  win->volumeDial.base_y = 276;
+  win->volumeDial.base_x = 247;
+  win->volumeDial.base_y = 68;
 
   // X11 handle of host window, in which plugin GUI
   // window must be embedded
@@ -300,7 +318,7 @@ st_point value_to_xy(int value)
 {
   int pointerAngle = value/100.0*(360.0-80.0-80.0) - 105.0;
   st_point p;
-  p.x = 42 + 27*sin(pointerAngle/180.0*M_PI);
+  p.x = 43 + 27*sin(pointerAngle/180.0*M_PI);
   p.y = 43 - 27*cos(pointerAngle/180.0*M_PI);
   return p;
 }
@@ -324,13 +342,13 @@ static void win_draw(win_t *win)
   if (win->bypass_flag == 0)
   {
     cairo_set_source_rgb(win->cr, 1.0, 0.63, 0.0);
-    cairo_arc(win->cr, 203, 450, 12, 0, 2 * M_PI);
+    cairo_arc(win->cr, 213, 428, 12, 0, 2 * M_PI);
     cairo_fill(win->cr);
   }
   else
   {
     cairo_set_source_rgb(win->cr, 0.0, 0.0, 0.0);
-    cairo_arc(win->cr, 203, 450, 12, 0, 2 * M_PI);
+    cairo_arc(win->cr, 213, 428, 12, 0, 2 * M_PI);
     cairo_fill(win->cr);
   }
 
@@ -340,14 +358,29 @@ static void win_draw(win_t *win)
 
   draw_dial(win->cr,
             win->image2,
-            win->fuzzDial.value,
-            win->fuzzDial.base_x,
-            win->fuzzDial.base_y);
+            win->driveDial.value,
+            win->driveDial.base_x,
+            win->driveDial.base_y);
   draw_dial(win->cr,
             win->image2,
-            win->toneDial.value,
-            win->toneDial.base_x,
-            win->toneDial.base_y);
+            win->bassDial.value,
+            win->bassDial.base_x,
+            win->bassDial.base_y);
+  draw_dial(win->cr,
+            win->image2,
+            win->middleDial.value,
+            win->middleDial.base_x,
+            win->middleDial.base_y);
+  draw_dial(win->cr,
+            win->image2,
+            win->trebleDial.value,
+            win->trebleDial.base_x,
+            win->trebleDial.base_y);
+  draw_dial(win->cr,
+            win->image2,
+            win->voiceDial.value,
+            win->voiceDial.base_x,
+            win->voiceDial.base_y);
   draw_dial(win->cr,
             win->image2,
             win->volumeDial.value,
@@ -375,14 +408,23 @@ static void port_event(LV2UI_Handle ui,
       else win->bypass_flag = 0;
     }
     break;
-    case PORT_FUZZ:
-      win->fuzzDial.value = clamp((int)(*(float*)buffer));
+    case PORT_BASS:
+      win->bassDial.value = db_to_value(*(float*)buffer, 15.0);
     break;
-    case PORT_TONE:
-      win->toneDial.value = db_to_value(*(float*)buffer , 15.0) * 2.0;
+    case PORT_DRIVE:
+      win->driveDial.value = clamp((int)(*(float*)buffer));
     break;
-    case PORT_VOLUME:
+    case PORT_LEVEL:
       win->volumeDial.value = clamp((int)((*(float*)buffer)*100.0));
+    break;
+    case PORT_MIDDLE:
+      win->middleDial.value = db_to_value(*(float*)buffer, 15.0);
+    break;
+    case PORT_TREBLE:
+      win->trebleDial.value = db_to_value(*(float*)buffer, 15.0);
+    break;
+    case PORT_VOICE:
+      win->voiceDial.value = clamp((int)((*(float*)buffer)*100.0));
   }
   // Redraw window due to value change
   win_draw(win);
@@ -451,23 +493,38 @@ win_handle_events(win_t *win)
           win->pos_y = bev->event_y;
 
           // Find on which dial the button was pressed
-          if (is_point_in_dial_area(win->pos_x, win->pos_y, &(win->fuzzDial)))
+          if (is_point_in_dial_area(win->pos_x, win->pos_y, &(win->driveDial)))
           {
-            win->fuzzDial.start_value = win->fuzzDial.value;
-            win->active_dial = PORT_FUZZ;
+            win->driveDial.start_value = win->driveDial.value;
+            win->active_dial = PORT_DRIVE;
           }
-          else if (is_point_in_dial_area(win->pos_x, win->pos_y, &(win->toneDial)))
+          else if (is_point_in_dial_area(win->pos_x, win->pos_y, &(win->bassDial)))
           {
-            win->toneDial.start_value = win->toneDial.value;
-            win->active_dial = PORT_TONE;
+            win->bassDial.start_value = win->bassDial.value;
+            win->active_dial = PORT_BASS;
+          }
+          else if (is_point_in_dial_area(win->pos_x, win->pos_y, &(win->middleDial)))
+          {
+            win->middleDial.start_value = win->middleDial.value;
+            win->active_dial = PORT_MIDDLE;
+          }
+          else if (is_point_in_dial_area(win->pos_x, win->pos_y, &(win->trebleDial)))
+          {
+            win->trebleDial.start_value = win->trebleDial.value;
+            win->active_dial = PORT_TREBLE;
+          }
+          else if (is_point_in_dial_area(win->pos_x, win->pos_y, &(win->voiceDial)))
+          {
+            win->voiceDial.start_value = win->voiceDial.value;
+            win->active_dial = PORT_VOICE;
           }
           else if (is_point_in_dial_area(win->pos_x, win->pos_y, &(win->volumeDial)))
           {
             win->volumeDial.start_value = win->volumeDial.value;
-            win->active_dial = PORT_VOLUME;
+            win->active_dial = PORT_LEVEL;
           }
           // Click on bypass button
-          else if (is_point_in_area(win->pos_x, win->pos_y, 182, 509, 225, 553))
+          else if (is_point_in_area(win->pos_x, win->pos_y, 275, 459, 326, 511))
           {
             // Toggle bypass flag
             win->bypass_flag ^= 1;
@@ -494,20 +551,35 @@ win_handle_events(win_t *win)
           switch (win->active_dial)
           {
             float value;
-            case PORT_FUZZ:
-              win->fuzzDial.value = clamp(win->fuzzDial.start_value + win->pos_y - mev->event_y);
-              value = win->fuzzDial.value;
-              win->write_function(win->controller,PORT_FUZZ,sizeof(float),0,&value);
+            case PORT_DRIVE:
+              win->driveDial.value = clamp(win->driveDial.start_value + win->pos_y - mev->event_y);
+              value = win->driveDial.value;
+              win->write_function(win->controller,PORT_DRIVE,sizeof(float),0,&value);
             break;
-            case PORT_TONE:
-              win->toneDial.value = clamp(win->toneDial.start_value + win->pos_y - mev->event_y);
-              value = value_to_db(win->toneDial.value, 15.0) / 2.0 - 7.5;
-              win->write_function(win->controller,PORT_TONE,sizeof(float),0,&value);
+            case PORT_BASS:
+              win->bassDial.value = clamp(win->bassDial.start_value + win->pos_y - mev->event_y);
+              value = value_to_db(win->bassDial.value, 15.0);
+              win->write_function(win->controller,PORT_BASS,sizeof(float),0,&value);
             break;
-            case PORT_VOLUME:
+            case PORT_MIDDLE:
+              win->middleDial.value = clamp(win->middleDial.start_value + win->pos_y - mev->event_y);
+              value = value_to_db(win->middleDial.value, 15.0);
+              win->write_function(win->controller,PORT_MIDDLE,sizeof(float),0,&value);
+            break;
+            case PORT_TREBLE:
+              win->trebleDial.value = clamp(win->trebleDial.start_value + win->pos_y - mev->event_y);
+              value = value_to_db(win->trebleDial.value, 15.0);
+              win->write_function(win->controller,PORT_TREBLE,sizeof(float),0,&value);
+            break;
+            case PORT_VOICE:
+              win->voiceDial.value = clamp(win->voiceDial.start_value + win->pos_y - mev->event_y);
+              value = win->voiceDial.value / 100.0;
+              win->write_function(win->controller,PORT_VOICE,sizeof(float),0,&value);
+            break;
+            case PORT_LEVEL:
               win->volumeDial.value = clamp(win->volumeDial.start_value + win->pos_y - mev->event_y);
               value = win->volumeDial.value / 100.0;
-              win->write_function(win->controller,PORT_VOLUME,sizeof(float),0,&value);
+              win->write_function(win->controller,PORT_LEVEL,sizeof(float),0,&value);
           }
           win_draw(win);
         }
@@ -546,7 +618,7 @@ extension_data(const char* uri)
 static const LV2UI_Descriptor descriptor =
 {
   PLUGIN_URI "ui",
-  instantiate,
+  (void* (*)(const LV2UI_Descriptor*, const char*, const char*, void (*)(void*, unsigned int, unsigned int, unsigned int, const void*), void*, void**, const LV2_Feature* const*))instantiate,
   cleanup,
   port_event,
   extension_data

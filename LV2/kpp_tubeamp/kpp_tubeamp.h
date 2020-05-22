@@ -22,6 +22,7 @@
 #define KPP_TUBEAMP_H
 
 #include <map>
+#include <string>
 
 #include <lv2/lv2plug.in/ns/ext/urid/urid.h>
 #include "lv2/lv2plug.in/ns/ext/atom/forge.h"
@@ -46,7 +47,7 @@
 
 // Structure holds pointers
 // to LV2 plugin ports
-struct stPorts 
+struct stPorts
 {
     float *volume;
     float *drive;

@@ -108,7 +108,6 @@ typedef struct
   // adjusted by the user
   // -1 means that no dial is adjusted
   int active_dial;
-
 } win_t;
 
 // Create main window
@@ -128,9 +127,9 @@ static void win_init(win_t *win, xcb_screen_t *screen,
     XCB_EVENT_MASK_BUTTON_1_MOTION };
 
   xcb_create_window(win->connection, XCB_COPY_FROM_PARENT,
-      win->win, parentXwindow,
-      0, 0, win->width, win->height, 0, XCB_WINDOW_CLASS_INPUT_OUTPUT,
-      screen->root_visual, mask, mask_values);
+                    win->win, parentXwindow,
+                    0, 0, win->width, win->height, 0, XCB_WINDOW_CLASS_COPY_FROM_PARENT,
+                    XCB_COPY_FROM_PARENT, mask, mask_values);
 
   xcb_size_hints_t size_hints;
   memset(&size_hints, 0, sizeof(size_hints));
@@ -618,7 +617,7 @@ extension_data(const char* uri)
 static const LV2UI_Descriptor descriptor =
 {
   PLUGIN_URI "ui",
-  instantiate,
+  (void* (*)(const LV2UI_Descriptor*, const char*, const char*, void (*)(void*, unsigned int, unsigned int, unsigned int, const void*), void*, void**, const LV2_Feature* const*))instantiate,
   cleanup,
   port_event,
   extension_data
