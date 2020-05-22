@@ -174,9 +174,10 @@ static void win_init(win_t *win, xcb_screen_t *screen,
     XCB_EVENT_MASK_BUTTON_1_MOTION };
 
   xcb_create_window(win->connection, XCB_COPY_FROM_PARENT,
-      win->win, parentXwindow,
-      0, 0, win->width, win->height, 0, XCB_WINDOW_CLASS_INPUT_OUTPUT,
-      screen->root_visual, mask, mask_values);
+                    win->win, parentXwindow,
+                    0, 0, win->width, win->height, 0, XCB_WINDOW_CLASS_COPY_FROM_PARENT,
+                    XCB_COPY_FROM_PARENT, mask, mask_values);
+
 
   xcb_size_hints_t size_hints;
   memset(&size_hints, 0, sizeof(size_hints));
@@ -321,7 +322,8 @@ instantiate(const struct _LV2UI_Descriptor * descriptor,
   win->image2 = cairo_image_surface_create_from_png (image_path);
 
   // Return to host the X11 handle of created window
-  *widget = (void*) (size_t) win->win;
+  //*widget = (void*) (size_t) win->win;
+  *(uintptr_t *)widget = (uintptr_t)win->win;
 
   if (resize)
   {
