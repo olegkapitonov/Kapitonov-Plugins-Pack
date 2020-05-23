@@ -17,38 +17,38 @@
  * --------------------------------------------------------------------------
  */
 /*
- * This pugin is effective noise gate. 
- * 
+ * This pugin is effective noise gate.
+ *
  * Process chain:
- * 
+ *
  * input->deadzone->multigate->output
- * 
+ *
  * deadzone - INSTANTLY eliminates the signal below the threshold level.
  *            This kills noise in pauses but distorts the signal around zero level.
- * 
+ *
  * multigate - 7-band noise gate. The input signal is divided into 7 frequency bands.
  *             In each band, the signal is eliminated when falling below the
  *             threshold level with attack time 10 ms, hold time 100 ms, release
  *             time 20 ms.
- * 
+ *
 */
 
 declare name "kpp_deadgate";
 declare author "Oleg Kapitonov";
 declare license "GPLv3";
-declare version "1.1";
+declare version "1.2";
 
-import("stdfaust.lib"); 
+import("stdfaust.lib");
 
 process = output with {
-  
+
   deadzone_knob = ba.db2linear(vslider("Dead Zone", -120, -120, 0, 0.001));
   noizegate_knob = vslider("Noise Gate", -120, -120, 0, 0.001);
-  
+
   deadzone = _ <: (max(deadzone_knob) : -(deadzone_knob)),
     (min(-deadzone_knob) : +(deadzone_knob)) : + ;
-    
-  multigate = _ : fi.filterbank(3, (65, 150, 300, 600, 1200, 2400)) : 
+
+  multigate = _ : fi.filterbank(3, (65, 150, 300, 600, 1200, 2400)) :
     ef.gate_mono(noizegate_knob, 0.01, 0.02, 0.02),
     ef.gate_mono(noizegate_knob, 0.01, 0.02, 0.02),
     ef.gate_mono(noizegate_knob, 0.01, 0.02, 0.02),
@@ -56,9 +56,9 @@ process = output with {
     ef.gate_mono(noizegate_knob, 0.01, 0.02, 0.02),
     ef.gate_mono(noizegate_knob, 0.01, 0.02, 0.02),
     ef.gate_mono(noizegate_knob, 0.01, 0.02, 0.02) :> _;
-    
+
     output = _,_ :> fi.highpass(1,10) : deadzone : multigate :
     *(ba.db2linear(-6.0)) <: _,_ ;
 };
- 
- 
+
+

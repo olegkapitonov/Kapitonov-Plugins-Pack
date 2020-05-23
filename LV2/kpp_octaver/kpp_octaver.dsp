@@ -16,25 +16,25 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  * --------------------------------------------------------------------------
  */
- 
+
 /*
  * This plugin is an octaver pedal emulator.
  * Model of analog octaver.
  *
  * Process:
- * 
+ *
  * Extract 1-st harmonics,
  * convert to squire form,
  * divide it's frequency by 2 and by 4,
  * modulate input with this signals.
- * 
+ *
  * Creates 2 additional tones - 1 and 2 octaves below.
  */
 
 declare name "kpp_octaver";
 declare author "Oleg Kapitonov";
 declare license "GPLv3";
-declare version "1.1";
+declare version "1.2";
 
 import("stdfaust.lib");
 
