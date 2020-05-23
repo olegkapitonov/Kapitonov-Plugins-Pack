@@ -661,11 +661,12 @@ static int select_new_profile_file(win_t *win)
   }
   win->fp_win = new KPPFilePicker::Win();
   win->fp_win->init();
+  win->fp_win->list.filters.push_back("tapf");
 
   std::string currentDir = win->profile_path;
   currentDir = currentDir.substr(0, currentDir.find_last_of('/'));
   win->fp_win->setTitle("Open *.tapf Profile File");
-  win->fp_win->list.showHidden = true;
+  //win->fp_win->list.showHidden = true;
   win->fp_win->list.readDir(currentDir);
 
   return 0;

@@ -43,7 +43,7 @@
 using namespace std;
 
 #define DEFAULT_PROFILE "American Clean"
-#define DEFAULT_PROFILE_PATH ("/profiles/" DEFAULT_PROFILE ".tapf")
+#define DEFAULT_PROFILE_PATH ("profiles/" DEFAULT_PROFILE ".tapf")
 
 // Defines for compatability with
 // FAUST generated code
