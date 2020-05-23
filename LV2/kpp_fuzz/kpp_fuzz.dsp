@@ -35,7 +35,7 @@
 declare name "kpp_fuzz";
 declare author "Oleg Kapitonov";
 declare license "GPLv3";
-declare version "1.1";
+declare version "1.2";
 
 import("stdfaust.lib");
 

@@ -1,4 +1,4 @@
-project('kpp', 'cpp', 'c', license: 'GPL-3.0-or-later', version: '1.1',
+project('kpp', 'cpp', 'c', license: 'GPL-3.0-or-later', version: '1.2',
   default_options : ['buildtype=release'])
 
 cc = meson.get_compiler('cpp')

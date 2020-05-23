@@ -1,3 +1,22 @@
+/*
+ * Copyright (C) 2018-2020 Oleg Kapitonov
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * --------------------------------------------------------------------------
+ */
+
 #ifndef KPP_FILE_PICKER_H
 #define KPP_FILE_PICKER_H
 
@@ -93,6 +112,8 @@ class List
 {
 
 public:
+
+  std::vector<std::string> filters;
 
   Color itemColor1;
   Color itemColor2;
@@ -247,8 +268,17 @@ public:
         FileItem item;
         item.fileName = namelist[i]->d_name;
 
-        if((item.fileName.substr(item.fileName.find_last_of(".") + 1) == "tapf") ||
-          (namelist[i]->d_type == DT_DIR))
+        bool filterPassed = false;
+        for (auto filter = filters.begin(); filter < filters.end(); filter++)
+        {
+          if (item.fileName.substr(item.fileName.find_last_of(".") + 1) == *filter)
+          {
+            filterPassed = true;
+            break;
+          }
+        }
+
+        if(filterPassed || (namelist[i]->d_type == DT_DIR))
         {
           if (namelist[i]->d_type == DT_DIR)
           {
@@ -380,6 +410,7 @@ public:
 
   Color buttonOpenColor;
   Color buttonCloseColor;
+  Color buttonHiddenColor;
 
   bool isInited = false;
   bool isFilenameUpdated = false;
@@ -393,7 +424,8 @@ public:
   List list;
 
   Win() : buttonOpenColor(0xFF0010),
-          buttonCloseColor(0x006010)
+          buttonCloseColor(0x006010),
+          buttonHiddenColor(0x00dffb)
   {
   }
 
@@ -534,6 +566,18 @@ public:
               cairo_device_destroy(device);
               xcb_disconnect(connection);
             }
+            // Hidden button
+            else if ((bev->event_x >=  width - buttonHiddenLeft) &&
+              (bev->event_x <=  width - buttonHiddenLeft + buttonHiddenCheckBoxSize) &&
+              (bev->event_y >= height - buttonHeight - list.marginBottom) &&
+              (bev->event_y <= height - buttonHeight - list.marginBottom + buttonHeight))
+            {
+              list.showHidden = !list.showHidden;
+              std::string currentDir = list.getFileNameOnCursor();
+              currentDir = currentDir.substr(0, currentDir.find_last_of('/'));
+              list.readDir(currentDir);
+              draw();
+            }
             else if ((bev->time - lastclick_time) < 400)
             {
               finished();
@@ -640,6 +684,10 @@ private:
   int buttonOpenLeft = 300;
   int buttonCloseLeft = 150;
 
+  int buttonHiddenLeft = 500;
+  int buttonHiddenCheckBoxSize = 15;
+  int buttonHiddenTextMargin = 10;
+
   void draw()
   {
     cairo_push_group (cr);
@@ -704,6 +752,30 @@ private:
                   height - buttonHeight - list.marginBottom +
                   (buttonHeight + (int)cte_h.height) / 2);
     cairo_show_text(cr, "Cancel");
+
+    cairo_set_source_rgb(cr, list.textColor.r(), list.textColor.g(), list.textColor.b());
+    cairo_text_extents(cr, "Show Hidden", &cte);
+    cairo_move_to(cr, width - buttonHiddenLeft + buttonHiddenCheckBoxSize +
+                  buttonHiddenTextMargin,
+                  height - buttonHeight - list.marginBottom +
+                  (buttonHeight + (int)cte_h.height) / 2);
+    cairo_show_text(cr, "Show Hidden");
+
+    cairo_set_source_rgb(cr, buttonHiddenColor.r(), buttonHiddenColor.g(),
+                         buttonHiddenColor.b());
+    cairo_set_line_width(cr, 2);
+    cairo_rectangle(cr, width - buttonHiddenLeft, height - buttonHeight -
+                    buttonHiddenCheckBoxSize -
+                    list.marginBottom + (buttonHeight + (int)cte_h.height) / 2 + 1,
+                    buttonHiddenCheckBoxSize, buttonHiddenCheckBoxSize);
+    cairo_stroke_preserve(cr);
+
+    if (!list.showHidden)
+    {
+      cairo_set_source_rgb(cr, list.backgroundColor.r(), list.backgroundColor.g(),
+                           list.backgroundColor.b());
+    }
+    cairo_fill(cr);
 
     cairo_pop_group_to_source (cr);
     cairo_paint (cr);

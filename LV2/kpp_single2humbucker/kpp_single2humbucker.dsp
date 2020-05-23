@@ -21,33 +21,33 @@
  * for single-coiled guitars (Stratocaster).
  * Good for playing hard rock and metal with Stratocaster.
  * Probably bad for playing blues :))
- *  
+ *
 */
 
 declare name "kpp_single2humbucker";
 declare author "Oleg Kapitonov";
 declare license "GPLv3";
-declare version "1.1";
+declare version "1.2";
 
-import("stdfaust.lib"); 
+import("stdfaust.lib");
 
 delay_samples = ma.SR / 2880 / 2;
 
 
 process = output with {
-  
+
   effect_knob = vslider("Humbuckerize", 1, 0, 1, 0.001);
   filter_knob = vslider("Bass Cut", 20, 20, 720, 0.001);
 
-  effect = fi.highpass(1,20) 
+  effect = fi.highpass(1,20)
     <: _, de.delay(50, delay_samples) :
     + : fi.lowpass(2, 5500) : fi.peak_eq(6.0, 550, 750);
-    
+
   filter = fi.highpass(1,filter_knob);
 
-    
+
   output = _,_ :> _ <: (*(effect_knob) : effect), (*(1.0 - effect_knob)) : + :
   filter : *(ba.db2linear(-10.0)) <: _,_ ;
 };
- 
- 
+
+
