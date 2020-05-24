@@ -429,6 +429,11 @@ public:
   {
   }
 
+  ~Win()
+  {
+    cleanup();
+  }
+
   void run()
   {
     xcb_generic_event_t *e;
@@ -471,16 +476,6 @@ public:
                       win, screen->root,
                       0, 0, width, height, 0, XCB_WINDOW_CLASS_INPUT_OUTPUT,
                       screen->root_visual, mask, mask_values);
-
-    /*title = "Open *.tapf Profile File";
-    xcb_change_property (connection,
-                         XCB_PROP_MODE_REPLACE,
-                         win,
-                         XCB_ATOM_WM_NAME,
-                         XCB_ATOM_STRING,
-                         8,
-                         title.size(),
-                         title.c_str());*/
 
     xcb_size_hints_t size_hints;
     memset(&size_hints, 0, sizeof(size_hints));
@@ -793,13 +788,18 @@ private:
       printf((list.getFileNameOnCursor() + "\n").c_str());
       isFilenameUpdated = true;
       newFileName = list.getFileNameOnCursor();
-      xcb_destroy_window(connection, win);
-      cairo_destroy(cr);
-      cairo_surface_destroy(surface);
-      cairo_device_finish(device);
-      cairo_device_destroy(device);
-      xcb_disconnect(connection);
+      //cleanup();
     }
+  }
+
+  void cleanup()
+  {
+    xcb_destroy_window(connection, win);
+    cairo_destroy(cr);
+    cairo_surface_destroy(surface);
+    cairo_device_finish(device);
+    cairo_device_destroy(device);
+    xcb_disconnect(connection);
   }
 };
 

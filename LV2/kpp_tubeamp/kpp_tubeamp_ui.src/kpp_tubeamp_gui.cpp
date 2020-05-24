@@ -848,6 +848,8 @@ win_handle_events(win_t *win)
                             msg);
         win_draw(win);
         win->fp_win->isFilenameUpdated = false;
+        delete win->fp_win;
+        win->fp_win = NULL;
       }
     }
   }
