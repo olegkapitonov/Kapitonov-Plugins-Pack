@@ -3,6 +3,11 @@ Kapitonov Plugins Pack (KPP)
 
 Last release is 1.2.
 
+**Attention!!!**
+
+**DSP model of kpp_distruction and kpp_fuzz plugins changed since version 1.2!
+Update carefully!**
+
 > Set of plugins for guitar sound processing.
 > Compatible with hosts such as Ardour, Qtractor, Carla,
 > guitarix, jack-rack.
@@ -63,12 +68,13 @@ and adjust the signal level.
 3. Zita-resampler 1.6+ and zita-convolver 4.0+ libraries (not needed for binary versions).
 
 In Ubuntu run:
+
 `apt install libxcb1 libxcb-util1 libxcb-icccm4 libcairo2 libxau6 libxdmcp6 libpixman-1-0 libfontconfig1 libfreetype6 libpng16-16 libxcb-shm0 libxcb-render0 libxrender1 libx11-6 libxext6 zlib1g libbsd0 libexpat1 libfftw3-3`
 
 ### Dependencies for building
 
 1. g++ compiler.
-2. Meson-0.52+ build system.
+2. Meson-0.51+ build system.
 3. Cairo library development files (headers, pkg-info).
 4. Boost development files.
 5. Zita-resampler 1.6+ development files.
@@ -77,6 +83,7 @@ In Ubuntu run:
 8. Faust 2.x compiler and libraries.
 
 In Ubuntu run:
+
 `apt install libxcb1-dev libxcb-util-dev libxcb-icccm4-dev libcairo2-dev libpixman-1-dev libfontconfig1-dev libfreetype6-dev libpng-dev libxcb-shm0-dev libxcb-render0-dev libxrender-dev libx11-dev libxext-dev zlib1g-dev libbsd-dev libexpat1-dev libfftw3-dev libboost-all-dev lv2-dev ladspa-sdk libzita-resampler-dev libzita-convolver-dev faust meson`
 
 **Attention!!!** Even in Ubuntu Focal Fossa zita-resampler is old 3.x! So use `thirdparty-included`
