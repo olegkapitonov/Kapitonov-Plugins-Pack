@@ -785,7 +785,7 @@ private:
     }
     else
     {
-      printf((list.getFileNameOnCursor() + "\n").c_str());
+      //printf("%s", (list.getFileNameOnCursor() + "\n").c_str());
       isFilenameUpdated = true;
       newFileName = list.getFileNameOnCursor();
       //cleanup();
