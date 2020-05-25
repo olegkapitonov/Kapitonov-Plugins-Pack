@@ -431,7 +431,10 @@ public:
 
   ~Win()
   {
-    cleanup();
+    if (!isCleaned)
+    {
+      cleanup();
+    }
   }
 
   void run()
@@ -554,12 +557,13 @@ public:
               (bev->event_y >= height - buttonHeight - list.marginBottom) &&
               (bev->event_y <= height - buttonHeight - list.marginBottom + buttonHeight))
             {
-              xcb_destroy_window(connection, win);
+              /*xcb_destroy_window(connection, win);
               cairo_destroy(cr);
               cairo_surface_destroy(surface);
               cairo_device_finish(device);
               cairo_device_destroy(device);
-              xcb_disconnect(connection);
+              xcb_disconnect(connection);*/
+              cleanup();
             }
             // Hidden button
             else if ((bev->event_x >=  width - buttonHiddenLeft) &&
@@ -658,7 +662,7 @@ public:
 
 private:
 
-
+  bool isCleaned = false;
   xcb_window_t win;
 
   int width, height;
@@ -800,6 +804,7 @@ private:
     cairo_device_finish(device);
     cairo_device_destroy(device);
     xcb_disconnect(connection);
+    isCleaned = true;
   }
 };
 
