@@ -1,7 +1,7 @@
 Kapitonov Plugins Pack (KPP)
 ============================
 
-Last release is 1.2.
+Last release is 1.2.1.
 
 **Attention!!!**
 
