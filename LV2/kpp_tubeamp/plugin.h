@@ -149,16 +149,11 @@ struct stPlugin {
 
       bufp += fragm;
     }
-    // Return result of convolution
-    // back to input buffer
-    for (int i=0; i<blocksz; i++)
-    {
-      inputs[0][i] = preamp_outp_buf[i];
-      inputs[1][i] = preamp_outp_buf[i];
-    }
+
+    float *inputs_after_preamp_convolver[2] = {preamp_outp_buf.data(), preamp_outp_buf.data()};
 
     // Apply main tubeAmp model from FAUST code
-    dsp->compute(blocksz, inputs, outputs);
+    dsp->compute(blocksz, inputs_after_preamp_convolver, outputs);
     // Cabinet simulation convolver
     bufp = 0;
 
