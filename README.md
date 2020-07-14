@@ -15,6 +15,8 @@ Update carefully!**
 Binary files are available for Linux 64-bit systems.
 Source code can be compiled for Linux 64-bit or 32-bit.
 
+Linux 64-bit VST3 versions (for REAPER, Bitwig Studio) [here](https://github.com/olegkapitonov/KPP-VST3)!
+
 **EXPERIMENTAL** Win64 VST3 versions now available [here](https://kpp-tubeamp.com/downloads)!
 
 ![Screenshot](screen.jpg)
