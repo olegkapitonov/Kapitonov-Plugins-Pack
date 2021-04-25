@@ -7,8 +7,8 @@ cxx = meson.get_compiler('cpp')
 
 boost = cxx.has_header('boost/circular_buffer.hpp', required: true)
 xcb = dependency('xcb', required: get_option('gui'))
-xcb_aux = dependency('xcb-aux', required: get_option('gui'))
-xcb_icccm = dependency('xcb-icccm', required: get_option('gui'))
+xcb_aux = dependency('xcb-aux', required: xcb.found())
+xcb_icccm = dependency('xcb-icccm', required: xcb.found())
 cairo = dependency('cairo', required: get_option('gui'))
 
 faust = find_program('faust', required: true)
