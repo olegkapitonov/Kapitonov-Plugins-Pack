@@ -44,6 +44,7 @@ foreach suffix, opts : plugins
     name_prefix: '',
     dependencies: [lv2] + deps,
     objects: objs,
+    link_language: 'cpp',
     install: true,
     install_dir : get_option('lv2dir') / bundle)
 
